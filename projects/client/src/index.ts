@@ -16,3 +16,5 @@ export type {
   SardanapalClientError,
   SardanapalCrudClientOptions,
 } from './crud';
+export { SardanapalPanelClient, defaultPanelEndpoints } from './panel';
+export type { GetExcelOptions, PanelEndpointMap, SardanapalPanelClientOptions } from './panel';

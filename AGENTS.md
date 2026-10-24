@@ -28,10 +28,12 @@ src/                       Small Angular demo app for clicking through the contr
 
 Two packages. Do not fold the HTTP client into the Angular library.
 
-| Package | Role |
-|---|---|
-| `@sardanapal/client` | Auth, token cache, automatic refresh, direction, CRUD, and panel calls. No Angular dependency. Any UI framework can call this. |
-| `@sardanapal/ng` | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on `@sardanapal/client`. |
+
+| Package              | Role                                                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@sardanapal/client` | Auth, token cache, automatic refresh, direction, CRUD, and panel calls. No Angular dependency. Any UI framework can call this.              |
+| `@sardanapal/ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on `@sardanapal/client`. |
+
 
 `ng-zorro-antd` is Angular-only (forms, CDK, dependency injection). The `s-*` components stay in `@sardanapal/ng`. A later React or Vue package would wrap `@sardanapal/client` and would not reuse the Angular templates. Do not compile the controls to Angular Elements: that ships the Angular runtime into every host and breaks `ngModel` and reactive forms.
 
@@ -55,7 +57,7 @@ These rules govern how an agent operates in this repo. Follow them strictly.
 
 1. **Never commit without explicit permission.** Stage changes and stop. Do not run `git commit`, push, amend, or open a PR unless the user explicitly asks.
 2. **Commit messages must match the sibling repos.** Look at `git log --oneline` in `../SardanapalCore` and `../SardanapalIdentity` first. The format is `<type>: <lowercase description>`. Types already in use: `resolve` (bug fix), `implement` (new capability), `update` (change to existing behavior), `refactor`, `docs`, `release`, `add`, `rm`. Example: `docs: add agents.md guide for the ui library`.
-3. **Log any issue you notice while working.** If you spot a bug, inconsistency, or improvement during a task, append a row to **`Issue.csv`** rather than silently fixing unrelated work. The file has a `State` column: `pending`, `fixed`, `rejected`. Create the file with headers if it does not yet exist.
+3. **Log any issue you notice while working.** If you spot a bug, inconsistency, or improvement during a task, append a row to `**Issue.csv`** rather than silently fixing unrelated work. The file has a `State` column: `pending`, `fixed`, `rejected`. Create the file with headers if it does not yet exist.
 4. **Never commit `Issue.csv` or any other `.csv`.** It is local-only tracking (gitignored). Do not stage it, even when committing a fix described by a row in it. Update its `State` locally only.
 5. **Do not commit if the tests are failing.** Run the test suite before committing. If any test fails, fix the failure before staging the commit.
 6. **Do not commit secrets** (tokens, `.env` files, signing keys).
@@ -64,15 +66,17 @@ These rules govern how an agent operates in this repo. Follow them strictly.
 
 Every response body is the Core envelope. Property names on the wire are camelCase.
 
-| Field | Meaning |
-|---|---|
-| `isSuccess` | True only when `statusCode` is `Succeeded` (`0`) |
-| `serviceName` | Name of the service that produced the result |
-| `operationType` | `Fetch = 0`, `Add = 1`, `Edit = 2`, `Delete = 3`, `Function = 4` |
-| `statusCode` | `Succeeded = 0`, `Failed = 1`, `Canceled = 3`, `NotExists = 4`, `Exception = 5`, `Duplicate = 6`, `Forbidden = 7` |
-| `developerMessages` | `string[]` |
-| `userMessage` | Single string, already localized by the host |
-| `data` | Payload for `IResponse<T>` |
+
+| Field               | Meaning                                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `isSuccess`         | True only when `statusCode` is `Succeeded` (`0`)                                                                  |
+| `serviceName`       | Name of the service that produced the result                                                                      |
+| `operationType`     | `Fetch = 0`, `Add = 1`, `Edit = 2`, `Delete = 3`, `Function = 4`                                                  |
+| `statusCode`        | `Succeeded = 0`, `Failed = 1`, `Canceled = 3`, `NotExists = 4`, `Exception = 5`, `Duplicate = 6`, `Forbidden = 7` |
+| `developerMessages` | `string[]`                                                                                                        |
+| `userMessage`       | Single string, already localized by the host                                                                      |
+| `data`              | Payload for `IResponse<T>`                                                                                        |
+
 
 Show `userMessage` when `isSuccess` is false. Treat `statusCode === 0` as success.
 
@@ -81,12 +85,12 @@ Show `userMessage` when `isSuccess` is false. Treat `statusCode === 0` as succes
 The client takes a configurable endpoint map (`apiBaseUrl` plus a path per method, overridable per resource). Do not hardcode one URL scheme as if Core or Identity published it. A host that has not chosen routes yet can follow this default, still overridable:
 
 ```
-POST {apiBaseUrl}/{resource}/get
+GET {apiBaseUrl}/{resource}/{id}
 POST {apiBaseUrl}/{resource}/get-all
 POST {apiBaseUrl}/{resource}/add
-POST {apiBaseUrl}/{resource}/get-editable
-POST {apiBaseUrl}/{resource}/edit
-POST {apiBaseUrl}/{resource}/delete
+GET {apiBaseUrl}/{resource}/get-editable/{id}
+PUT {apiBaseUrl}/{resource}/{id}
+DELETE {apiBaseUrl}/{resource}/{id}
 POST {apiBaseUrl}/{resource}/dictionary
 POST {apiBaseUrl}/{resource}/excel
 POST {apiBaseUrl}/account/login
@@ -101,7 +105,7 @@ POST {apiBaseUrl}/account/refresh          optional
 
 Matches the Identity account and token services.
 
-- Request header name is `AUTH`. The value is the raw JWT. Do not send an `Authorization` header and do not add a `Bearer ` prefix.
+- Request header name is `AUTH`. The value is the raw JWT. Do not send an `Authorization` header and do not add a `Bearer`  prefix.
 - Login body is `{ username, password }`. Success data is `{ token }`. Read the lifetime from the JWT `exp` claim. `LoginDto` has no `expiresIn` and no refresh token.
 - Cache the token in memory. An optional storage adapter may persist it. Never log the token.
 - Attach `AUTH` on every API call when a token is cached.
@@ -117,23 +121,27 @@ Matches the Identity account and token services.
 
 Method names match Core. There is no `Save` and no `Search`. Create is `add`. List is `getAll`. Update is `edit`.
 
-| Method | Request | Response `data` |
-|---|---|---|
-| `get` | key | detail VM |
-| `getAll` | `GridSearchModel` | `{ list, searchModel }` |
-| `add` | new VM | new key |
-| `getEditable` | key | editable VM |
-| `edit` | key + editable VM | `boolean` |
-| `delete` | key | `boolean` |
+
+| Method        | Request           | Response `data`         |
+| ------------- | ----------------- | ----------------------- |
+| `get`         | key               | detail VM               |
+| `getAll`      | `GridSearchModel` | `{ list, searchModel }` |
+| `add`         | new VM            | new key                 |
+| `getEditable` | key               | editable VM             |
+| `edit`        | key + editable VM | `boolean`               |
+| `delete`      | key               | `boolean`               |
+
 
 ### Panel
 
 Panel is CRUD plus:
 
-| Method | Request | Response `data` |
-|---|---|---|
+
+| Method          | Request           | Response `data`          |
+| --------------- | ----------------- | ------------------------ |
 | `getDictionary` | `GridSearchModel` | grid of `{ key, value }` |
-| `getExcel` | `GridSearchModel` | file bytes |
+| `getExcel`      | `GridSearchModel` | file bytes               |
+
 
 `GridSearchModel` fields:
 
@@ -160,14 +168,16 @@ Direction is a UI concern. Core has `en` and `fa-IR` strings and no `dir` flag.
 
 Selectors are `s-<kebab-name>`. An editing control implements `ControlValueAccessor`.
 
-| Selector | ng-zorro | Behavior |
-|---|---|---|
-| `s-text` | typography | Display only |
-| `s-text-box` | `nz-input` | Single-line text |
-| `s-text-area` | `textarea` `nz-input` | Multi-line text |
-| `s-numeric` | `nz-input-number` | Number |
-| `s-select` | `nz-select` | Static options, or `getDictionary` |
-| `s-grid` | `nz-table` | Page and sort through `getAll` |
+
+| Selector      | ng-zorro              | Behavior                           |
+| ------------- | --------------------- | ---------------------------------- |
+| `s-text`      | typography            | Display only                       |
+| `s-text-box`  | `nz-input`            | Single-line text                   |
+| `s-text-area` | `textarea` `nz-input` | Multi-line text                    |
+| `s-numeric`   | `nz-input-number`     | Number                             |
+| `s-select`    | `nz-select`           | Static options, or `getDictionary` |
+| `s-grid`      | `nz-table`            | Page and sort through `getAll`     |
+
 
 Further controls (`s-date`, `s-checkbox`, `s-switch`, `s-password`, and the rest) use the same selector and accessor pattern. Do not rename a control to match the ng-zorro tag.
 
@@ -176,3 +186,4 @@ Further controls (`s-date`, `s-checkbox`, `s-switch`, `s-password`, and the rest
 - User-facing strings on `userMessage` are already localized by the host. The 403 password-change body from the Identity authorize filter is a hardcoded English message, not the envelope.
 - `pageIndex` is zero-based. `pageSize` `0` means unpaged.
 - Branch that matches the sibling repos is `master`.
+

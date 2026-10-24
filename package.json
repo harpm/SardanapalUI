@@ -1,0 +1,11 @@
+{
+  "name": "sardanapal-ui",
+  "private": true,
+  "workspaces": [
+    "projects/client"
+  ],
+  "scripts": {
+    "test": "npm run test -w @sardanapal/client",
+    "build": "npm run build -w @sardanapal/client"
+  }
+}

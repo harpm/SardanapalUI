@@ -2,10 +2,11 @@
   "name": "sardanapal-ui",
   "private": true,
   "workspaces": [
-    "projects/client"
+    "projects/client",
+    "projects/identity-client"
   ],
   "scripts": {
-    "test": "npm run test -w @sardanapal/client",
-    "build": "npm run build -w @sardanapal/client"
+    "test": "npm run test -w @sardanapal/client -w @sardanapal/identity-client",
+    "build": "npm run build -w @sardanapal/client && npm run build -w @sardanapal/identity-client"
   }
 }

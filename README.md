@@ -17,7 +17,8 @@ The library is split so the non-visual client can be used from any UI framework,
 
 | Package | What it is |
 |---|---|
-| `@sardanapal/client` | TypeScript client for auth, direction, CRUD, and panel calls. Any UI framework can use it. |
+| `@sardanapal/client` | Core side: HTTP transport, response envelope, storage adapters, direction, CRUD, and panel calls. Any UI framework can use it. |
+| `@sardanapal/identity-client` | Identity side: login, token cache, automatic refresh, and JWT claims. Depends on `@sardanapal/client`. Any UI framework can use it. |
 | `@sardanapal/ng` | Angular components. The `s-*` controls live here and are Angular-only. |
 
 ### First controls

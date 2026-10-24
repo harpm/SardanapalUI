@@ -19,20 +19,22 @@ AGENTS.md
 README.md
 .gitignore
 projects/
-  client/                  @sardanapal/client   plain TypeScript, no Angular
-  ng/                      @sardanapal/ng       Angular library, depends on client
+  client/                  @sardanapal/client            plain TypeScript, no Angular (Core)
+  identity-client/         @sardanapal/identity-client   plain TypeScript, no Angular (Identity), depends on client
+  ng/                      @sardanapal/ng                Angular library, depends on both
 src/                       Small Angular demo app for clicking through the controls
 ```
 
 ## Packages
 
-Two packages. Do not fold the HTTP client into the Angular library.
+Three packages. Do not fold the HTTP client into the Angular library. Core and Identity are separate frameworks, so their clients are separate packages: an app that only uses Core must not pull Identity code. Dependency direction is `identity-client` to `client`, never the other way. `SardanapalAuthService` accepts an optional `client` option, so Core CRUD/panel calls made through the same `SardanapalHttpClient` carry the `AUTH` header.
 
 
 | Package              | Role                                                                                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@sardanapal/client` | Auth, token cache, automatic refresh, direction, CRUD, and panel calls. No Angular dependency. Any UI framework can call this.              |
-| `@sardanapal/ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on `@sardanapal/client`. |
+| `@sardanapal/client` | Core side: `SardanapalHttpClient` (transport and interceptor hooks), `SardanapalHttpError`, the `IResponse<T>` envelope, storage adapters, direction, CRUD, and panel calls. No Angular dependency. |
+| `@sardanapal/identity-client` | Identity side: `SardanapalAuthService` (login, token cache, automatic refresh, session) and `SardanapalJwtService` (claims). Plugs into the core client as an interceptor. No Angular dependency. |
+| `@sardanapal/ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on both clients. |
 
 
 `ng-zorro-antd` is Angular-only (forms, CDK, dependency injection). The `s-*` components stay in `@sardanapal/ng`. A later React or Vue package would wrap `@sardanapal/client` and would not reuse the Angular templates. Do not compile the controls to Angular Elements: that ships the Angular runtime into every host and breaks `ngModel` and reactive forms.
@@ -103,7 +105,7 @@ POST {apiBaseUrl}/account/refresh          optional
 
 ### Auth
 
-Matches the Identity account and token services.
+Lives in `@sardanapal/identity-client`. Matches the Identity account and token services.
 
 - Request header name is `AUTH`. The value is the raw JWT. Do not send an `Authorization` header and do not add a `Bearer`  prefix.
 - Login body is `{ username, password }`. Success data is `{ token }`. Read the lifetime from the JWT `exp` claim. `LoginDto` has no `expiresIn` and no refresh token.

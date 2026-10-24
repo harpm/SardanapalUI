@@ -10,8 +10,19 @@ The library is split so the non-visual client can be used from any UI framework,
 
 - **Auth**: caches the security token and refreshes it automatically.
 - **Direction**: switches layout for English (`ltr`) and Persian (`rtl`).
-- **CRUD and panel clients**: call the same operations the Core service bases provide (`get`, `getAll`, `add`, `getEditable`, `edit`, `delete`, `getDictionary`, `getExcel`).
+- **CRUD and panel clients**: call the same operations the Core service bases provide (`$get`, `$getAll`, `$add`, `$getEditable`, `$edit`, `$delete`, `$getDictionary`, `$getExcel`). `SardanapalCrudClient` and `SardanapalPanelClient` return RxJS observables of the typed response body, with a configurable route per resource. Failed requests are also emitted on `error$`.
 - **Controls**: ready-made inputs and a grid, with the selector `s-<component-name>`.
+
+```ts
+import { SardanapalHttpClient, SardanapalPanelClient } from '@sardanapal/client';
+
+const client = new SardanapalHttpClient({ apiBaseUrl: 'https://host/api' });
+const orders = new SardanapalPanelClient({ client, resource: 'orders' });
+
+orders.$getAll({ pageIndex: 0, pageSize: 25 }).subscribe((result) => {
+  if (result.isSuccess) console.log(result.data?.list);
+});
+```
 
 ## Packages
 

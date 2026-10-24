@@ -123,26 +123,51 @@ Lives in `@sardanapal/identity-client`. Matches the Identity account and token s
 
 Method names match Core. There is no `Save` and no `Search`. Create is `add`. List is `getAll`. Update is `edit`.
 
+`SardanapalCrudClient` lives in `@sardanapal/client`. Like the auth service, each method carries the `$` prefix and returns an `Observable<IResponse<T>>`. axios deserializes the body and the method only supplies the type, so the body is returned exactly as received. `IResponse.isSuccess` is a readonly boolean the host sends (Core's `IsSuccess`), not a method. Check it and show `userMessage` yourself. A failure status inside a 2xx body is returned, not thrown. Non-2xx and transport failures reject with `SardanapalHttpError`. Pass the shared `SardanapalHttpClient` so calls carry the `AUTH` header.
 
-| Method        | Request           | Response `data`         |
-| ------------- | ----------------- | ----------------------- |
-| `get`         | key               | detail VM               |
-| `getAll`      | `GridSearchModel` | `{ list, searchModel }` |
-| `add`         | new VM            | new key                 |
-| `getEditable` | key               | editable VM             |
-| `edit`        | key + editable VM | `boolean`               |
-| `delete`      | key               | `boolean`               |
+Every request that rejects (transport failure or non-2xx) is also emitted on the client's `error$` observable as a `SardanapalClientError` (`resource`, `operation`, `message`, `error`). A 2xx body with a failure `statusCode` is not emitted. `error$` covers only that client instance. `SardanapalHttpClient.httpError$` still covers every call on the shared client.
+
+
+| Method         | Request           | Response `data`         | Default route                      |
+| -------------- | ----------------- | ----------------------- | ---------------------------------- |
+| `$get`         | key               | detail VM               | `GET {resource}/{id}`              |
+| `$getAll`      | `GridSearchModel` | `{ list, searchModel }` | `POST {resource}/get-all`          |
+| `$add`         | new VM            | new key                 | `POST {resource}/add`              |
+| `$getEditable` | key               | editable VM             | `GET {resource}/get-editable/{id}` |
+| `$edit`        | key + editable VM | `boolean`               | `PUT {resource}/{id}`              |
+| `$delete`      | key               | `boolean`               | `DELETE {resource}/{id}`           |
+
+
+Routes are templates with `{resource}` and `{id}` placeholders. Override any of them per resource with the `endpoints` option. The HTTP verb is fixed per method.
+
+```ts
+const client = new SardanapalHttpClient({ apiBaseUrl: 'https://host/api' });
+const orders = new SardanapalCrudClient<number, OrderSearch, OrderVM, NewOrderVM, EditOrderVM>({
+  client,
+  resource: 'orders',
+  endpoints: { delete: '{resource}/{id}/remove' }, // optional
+});
+
+orders.$getAll({ fields: { name: 'a' }, pageIndex: 1 }).subscribe((result) => {
+  if (!result.isSuccess) { /* show result.userMessage */ }
+});
+```
+
+A partial `GridSearchModel` is completed with the defaults below (`createGridSearchModel`).
 
 
 ### Panel
 
-Panel is CRUD plus:
+Panel is CRUD plus. `SardanapalPanelClient` extends `SardanapalCrudClient` and takes the same options, with two more `endpoints` keys:
 
 
-| Method          | Request           | Response `data`          |
-| --------------- | ----------------- | ------------------------ |
-| `getDictionary` | `GridSearchModel` | grid of `{ key, value }` |
-| `getExcel`      | `GridSearchModel` | file bytes               |
+| Method          | Request           | Response `data`          | Default route                |
+| --------------- | ----------------- | ------------------------ | ---------------------------- |
+| `$getDictionary` | `GridSearchModel` | grid of `{ key, value }` | `POST {resource}/dictionary` |
+| `$getExcel`      | `GridSearchModel` | file bytes               | `POST {resource}/excel`      |
+
+
+`$getExcel` returns an `Observable<ArrayBuffer | Blob>` and does not read the JSON envelope. It always sends `pageSize: 0`. The file is read as `arraybuffer` by default, or as a `Blob` with `{ responseType: 'blob' }` in a browser. A failed call rejects with `SardanapalHttpError` whose `body` is the decoded JSON or text, not raw bytes.
 
 
 `GridSearchModel` fields:

@@ -1,5 +1,6 @@
-import { catchError, Subject, throwError, type Observable } from "rxjs";
+import type { Observable } from "rxjs";
 import type { AxiosRequestConfig } from "axios";
+import type { ClientOperation } from "./errors";
 import type { SardanapalHttpClient } from "./http";
 import {
   createGridSearchModel,
@@ -8,26 +9,6 @@ import {
   type GridSearchModel,
 } from "./grid";
 import type { IResponse } from "./response";
-
-/** Names of the client methods, without the `$` prefix. */
-export type ClientOperation =
-  | "get"
-  | "getAll"
-  | "add"
-  | "getEditable"
-  | "edit"
-  | "delete"
-  | "getDictionary"
-  | "getExcel";
-
-/** What `error$` emits for a failed request: a transport failure or a non-2xx status. */
-export interface SardanapalClientError {
-  resource: string;
-  operation: ClientOperation;
-  message: string;
-  /** Normally a `SardanapalHttpError`. */
-  error: Error;
-}
 
 /**
  * Path templates, one per CRUD method. Placeholders:
@@ -75,9 +56,9 @@ export interface SardanapalCrudClientOptions<
  * received, so check `isSuccess` and show `userMessage` yourself. Transport
  * failures and non-2xx statuses reject with `SardanapalHttpError`.
  *
- * Those rejections are also emitted on `error$` with the resource and operation.
- * `error$` only sees this client's calls. Use `SardanapalHttpClient.httpError$`
- * for every call made on the shared client.
+ * Each failure is reported once on the HTTP client's `httpError$` (also
+ * `client.errors.error$`). The `SardanapalHttpError` carries this client's
+ * `resource` and the `operation`, so subscribers can tell the calls apart.
  */
 export class SardanapalCrudClient<
   TKey extends EntityKey = number,
@@ -89,9 +70,6 @@ export class SardanapalCrudClient<
 > {
   protected readonly client: SardanapalHttpClient;
   readonly resource: string;
-  /** Emits once for each failed request of this client. */
-  readonly error$: Observable<SardanapalClientError>;
-  private readonly errorSubject$ = new Subject<SardanapalClientError>();
   /** Defaults merged with the `endpoints` option. A subclass redeclares this with its wider map type. */
   protected readonly endpoints: CrudEndpointMap;
 
@@ -113,7 +91,6 @@ export class SardanapalCrudClient<
 
     this.client = options.client;
     this.resource = resource;
-    this.error$ = this.errorSubject$.asObservable();
     this.endpoints = this.mergeEndpoints(defaults, options.endpoints);
   }
 
@@ -182,28 +159,27 @@ export class SardanapalCrudClient<
     return path.replace(/(^|[^:])\/{2,}/g, "$1/");
   }
 
-  /** Sends the request and types the deserialized body as `IResponse<T>`. A failure is reported on `error$` and rethrown. */
+  /** Sends the request and types the deserialized body as `IResponse<T>`. */
   protected $send<T>(
     operation: ClientOperation,
     path: string,
     config: AxiosRequestConfig,
   ): Observable<IResponse<T>> {
-    return this.client.$request<IResponse<T>>(path, config).pipe(
-      catchError((error: unknown) => {
-        this.reportFailure(operation, error);
-        return throwError(() => error);
-      }),
-    );
+    return this.$call<IResponse<T>>(operation, path, config);
   }
 
-  /** Emits a failed request on `error$`. Subclasses call it for requests that do not use `$send`. */
-  protected reportFailure(operation: ClientOperation, error: unknown): void {
-    const failure = error instanceof Error ? error : new Error(String(error));
-    this.errorSubject$.next({
-      resource: this.resource,
-      operation,
-      message: failure.message,
-      error: failure,
+  /**
+   * Sends the request with this client's `resource` and the `operation` as the
+   * error context. The HTTP client reports a failure once, with that context.
+   */
+  protected $call<T>(
+    operation: ClientOperation,
+    path: string,
+    config: AxiosRequestConfig,
+  ): Observable<T> {
+    return this.client.$request<T>(path, {
+      ...config,
+      errorContext: { resource: this.resource, operation },
     });
   }
 

@@ -157,6 +157,24 @@ describe('auth', () => {
     expect(client.getSession().mustChangePassword).toBe(true);
   });
 
+  it('reports the password-change 403 once', async () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const { client } = createClient(async (url) => {
+      if (url.endsWith('/account/login')) {
+        return { data: envelope({ token: accessToken }) };
+      }
+      return { data: { message: 'Password change required.' }, status: 403 };
+    });
+    const httpErrors: SardanapalHttpError[] = [];
+    const errors = client.httpError$.subscribe((error) => httpErrors.push(error));
+    await firstValueFrom(client.$login('ada', 'secret'));
+
+    const error = await firstValueFrom(client.$request('/orders')).catch((caught: unknown) => caught);
+
+    expect(httpErrors).toEqual([error]);
+    errors.unsubscribe();
+  });
+
   it('clears only the local cache on logout', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
     const { client, calls } = createClient(async () => ({ data: envelope({ token: accessToken }) }));

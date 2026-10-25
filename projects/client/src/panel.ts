@@ -1,4 +1,4 @@
-import { catchError, from, switchMap, throwError, type Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import {
   SardanapalCrudClient,
   defaultCrudEndpoints,
@@ -6,7 +6,6 @@ import {
   type SardanapalCrudClientOptions,
 } from './crud';
 import { createGridSearchModel, type EntityKey, type GridResult, type GridSearchModel, type SelectOption } from './grid';
-import { SardanapalHttpError } from './http';
 import type { IResponse } from './response';
 
 /**
@@ -66,62 +65,18 @@ export class SardanapalPanelClient<
   /**
    * Downloads the search result as a file. The response is the file bytes, not
    * the JSON envelope. The request always uses `pageSize: 0` (all rows). A failed
-   * call rejects with `SardanapalHttpError` whose `body` is the decoded error
-   * body (parsed JSON when possible, otherwise text), not raw bytes. The same
-   * decoded error is emitted on `error$`.
+   * call rejects with `SardanapalHttpError`. Its `body` is what axios returns for
+   * the requested `responseType`, so an `ArrayBuffer` or `Blob`, not parsed JSON.
    */
   $getExcel(
     model?: Partial<GridSearchModel<TKey, TSearch>> | null,
     options?: GetExcelOptions,
   ): Observable<ArrayBuffer | Blob> {
     const data = { ...createGridSearchModel(model), pageSize: 0 };
-    return this.client.$request<ArrayBuffer | Blob>(
+    return this.$call<ArrayBuffer | Blob>(
+      'getExcel',
       this.buildPath(this.endpoints.getExcel),
       { method: 'POST', data, responseType: options?.responseType ?? 'arraybuffer' },
-    ).pipe(
-      catchError((error: unknown) => from(decodeErrorBody(error)).pipe(
-        switchMap((decoded) => {
-          this.reportFailure('getExcel', decoded);
-          return throwError(() => decoded);
-        }),
-      )),
     );
   }
-}
-
-/**
- * With a binary `responseType` an error body arrives as bytes. Turn it back
- * into JSON or text, keeping status and message. The original error was
- * already reported on `httpError$`, so the decoded copy is not reported again.
- */
-async function decodeErrorBody(error: unknown): Promise<unknown> {
-  if (!(error instanceof SardanapalHttpError)) {
-    return error;
-  }
-
-  const text = await readText(error.body);
-  if (text === null) {
-    return error;
-  }
-
-  let body: unknown = text;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    // Not JSON: keep the text.
-  }
-  return new SardanapalHttpError(error.message, error.status, body, error.mustChangePassword);
-}
-
-async function readText(body: unknown): Promise<string | null> {
-  if (typeof Blob !== 'undefined' && body instanceof Blob) {
-    return body.text();
-  }
-  if (body instanceof ArrayBuffer) {
-    return new TextDecoder().decode(body);
-  }
-  if (ArrayBuffer.isView(body)) {
-    return new TextDecoder().decode(body);
-  }
-  return null;
 }

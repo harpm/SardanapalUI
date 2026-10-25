@@ -10,7 +10,7 @@ The library is split so the non-visual client can be used from any UI framework,
 
 - **Auth**: caches the security token and refreshes it automatically.
 - **Direction**: switches layout for English (`ltr`) and Persian (`rtl`).
-- **CRUD and panel clients**: call the same operations the Core service bases provide (`$get`, `$getAll`, `$add`, `$getEditable`, `$edit`, `$delete`, `$getDictionary`, `$getExcel`). `SardanapalCrudClient` and `SardanapalPanelClient` return RxJS observables of the typed response body, with a configurable route per resource. Failed requests are also emitted on `error$`.
+- **CRUD and panel clients**: call the same operations the Core service bases provide (`$get`, `$getAll`, `$add`, `$getEditable`, `$edit`, `$delete`, `$getDictionary`, `$getExcel`). `SardanapalCrudClient` and `SardanapalPanelClient` return RxJS observables of the typed response body, with a configurable route per resource. A failed request is reported once, as a `SardanapalHttpError` carrying `resource` and `operation`, on the HTTP client's `httpError$`.
 - **Controls**: ready-made inputs and a grid, with the selector `s-<component-name>`.
 
 ```ts

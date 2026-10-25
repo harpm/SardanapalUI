@@ -1,9 +1,10 @@
-import { AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {
   OperationType,
   Response,
+  SardanapalErrorChannel,
   SardanapalHttpClient,
   SardanapalHttpError,
   StatusCode,
@@ -89,17 +90,109 @@ describe('http client', () => {
     ]);
   });
 
-  it('lets a response interceptor replace the error', async () => {
+  it('lets a response interceptor replace the error, and reports it once', async () => {
     const client = createClient(() => ({ data: null, status: 401 }));
+    const reported: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => reported.push(error));
     client.use({
       response: (response) => {
         if (response.status === 401) {
-          throw client.reportHttpError(new SardanapalHttpError('Unauthorized', 401, response.data));
+          throw new SardanapalHttpError('Unauthorized', 401, response.data);
         }
       },
     });
 
-    await expect(firstValueFrom(client.$request('/orders'))).rejects.toMatchObject({ message: 'Unauthorized' });
+    const error = await firstValueFrom(client.$request('/orders')).catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ message: 'Unauthorized', status: 401 });
+    expect(reported).toEqual([error]);
+  });
+
+  it('reports a request interceptor failure once, as a SardanapalHttpError', async () => {
+    const client = createClient(() => ({ data: {} }));
+    const reported: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => reported.push(error));
+    client.use({
+      request: () => {
+        throw new Error('no token');
+      },
+    });
+
+    await expect(firstValueFrom(client.$request('/orders'))).rejects.toMatchObject({
+      name: 'SardanapalHttpError',
+      status: 0,
+      message: 'no token',
+    });
+
+    expect(reported).toHaveLength(1);
+  });
+
+  it('exposes the channel as errors and shares a supplied one between clients', async () => {
+    const errors = new SardanapalErrorChannel();
+    const first = createClient(() => ({ data: {}, status: 500 }), errors);
+    const second = createClient(() => ({ data: {}, status: 404 }), errors);
+    const statuses: number[] = [];
+    errors.error$.subscribe((error) => statuses.push(error.status));
+
+    await firstValueFrom(first.$request('/a')).catch(() => undefined);
+    await firstValueFrom(second.$request('/b')).catch(() => undefined);
+
+    expect(first.errors).toBe(errors);
+    expect(first.httpError$).toBe(errors.error$);
+    expect(statuses).toEqual([500, 404]);
+  });
+
+  it('copies the request errorContext onto the reported error', async () => {
+    const client = createClient(() => ({ data: {}, status: 500 }));
+    const reported: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => reported.push(error));
+
+    await firstValueFrom(client.$request('/orders', { errorContext: { resource: 'orders', operation: 'getAll' } }))
+      .catch(() => undefined);
+    await firstValueFrom(client.$request('/other')).catch(() => undefined);
+
+    expect(reported[0]).toMatchObject({ resource: 'orders', operation: 'getAll' });
+    expect(reported[1].resource).toBeUndefined();
+    expect(reported[1].operation).toBeUndefined();
+  });
+
+  it('copies the errorContext for transport and request interceptor failures too', async () => {
+    const client = createClient((config) => {
+      throw new AxiosError('network down', AxiosError.ERR_NETWORK, config);
+    });
+    const reported: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => reported.push(error));
+    const context = { errorContext: { resource: 'orders', operation: 'get' as const } };
+
+    await firstValueFrom(client.$request('/orders', context)).catch(() => undefined);
+    client.use({
+      request: () => {
+        throw new Error('no token');
+      },
+    });
+    await firstValueFrom(client.$request('/orders', context)).catch(() => undefined);
+
+    expect(reported).toHaveLength(2);
+    expect(reported).toMatchObject([
+      { status: 0, message: 'network down', resource: 'orders', operation: 'get' },
+      { status: 0, message: 'no token', resource: 'orders', operation: 'get' },
+    ]);
+  });
+
+  it('decodes a binary error body to JSON before interceptors and callers see it', async () => {
+    const bytes = toBuffer(JSON.stringify({ message: 'export failed' }));
+    const client = createClient(() => ({ data: bytes, status: 500 }));
+    const seenByInterceptor: unknown[] = [];
+    client.use({ response: (response) => seenByInterceptor.push(response.data) });
+    const reported: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => reported.push(error));
+
+    const error = await firstValueFrom(client.$request('/x', { responseType: 'arraybuffer' }))
+      .catch((e: unknown) => e);
+
+    expect((error as SardanapalHttpError).body).toEqual({ message: 'export failed' });
+    expect(seenByInterceptor).toEqual([{ message: 'export failed' }]);
+    expect(reported).toEqual([error]);
   });
 });
 
@@ -163,6 +256,7 @@ describe('storage', () => {
 
 function createClient(
   handler: (config: InternalAxiosRequestConfig) => { data: unknown; status?: number },
+  errors?: SardanapalErrorChannel,
 ): SardanapalHttpClient {
   const adapter: AxiosAdapter = async (config) => {
     const result = handler(config);
@@ -174,5 +268,10 @@ function createClient(
       config,
     };
   };
-  return new SardanapalHttpClient({ apiBaseUrl: baseUrl, adapter });
+  return new SardanapalHttpClient({ apiBaseUrl: baseUrl, adapter, errors });
+}
+
+function toBuffer(text: string): ArrayBuffer {
+  const bytes = new TextEncoder().encode(text);
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }

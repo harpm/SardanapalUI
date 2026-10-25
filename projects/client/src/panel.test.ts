@@ -1,4 +1,4 @@
-import { AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {
@@ -7,7 +7,6 @@ import {
   SardanapalHttpError,
   SardanapalPanelClient,
   StatusCode,
-  type SardanapalClientError,
 } from './index';
 
 const baseUrl = 'http://localhost:5000';
@@ -99,29 +98,16 @@ describe('panel client', () => {
     expect(result).toBeInstanceOf(Blob);
   });
 
-  it('$getExcel decodes a JSON error body from bytes', async () => {
-    const payload = { statusCode: StatusCode.Failed, userMessage: 'export failed' };
-    const { client } = createClient(() => ({ data: toBuffer(JSON.stringify(payload)), status: 500 }));
-    const reported: SardanapalHttpError[] = [];
-    client.httpError$.subscribe((error) => reported.push(error));
+  it('$getExcel rejects with a non-JSON blob error body decoded to text', async () => {
+    const blob = new Blob(['gateway down']);
+    const { client } = createClient(() => ({ data: blob, status: 502 }));
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
 
-    const error = await firstValueFrom(panel.$getExcel()).catch((e: unknown) => e);
+    const error = await firstValueFrom(panel.$getExcel(null, { responseType: 'blob' })).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(SardanapalHttpError);
-    expect(error).toMatchObject({ status: 500, body: payload });
-    expect(reported).toHaveLength(1);
-  });
-
-  it('$getExcel decodes a text error body from a blob', async () => {
-    const { client } = createClient(() => ({ data: new Blob(['gateway down']), status: 502 }));
-    const panel = new SardanapalPanelClient({ client, resource: 'orders' });
-
-    await expect(firstValueFrom(panel.$getExcel(null, { responseType: 'blob' }))).rejects.toMatchObject({
-      name: 'SardanapalHttpError',
-      status: 502,
-      body: 'gateway down',
-    });
+    expect(error).toMatchObject({ status: 502 });
+    expect((error as SardanapalHttpError).body).toBe('gateway down');
   });
 
   it('$getExcel passes transport failures through unchanged', async () => {
@@ -133,62 +119,61 @@ describe('panel client', () => {
     await expect(firstValueFrom(panel.$getExcel())).rejects.toMatchObject({ status: 0, message: 'network down' });
   });
 
-  it('emits a failed $getDictionary request on error$', async () => {
+  it('reports a failed $getDictionary request on client.httpError$', async () => {
     const { client } = createClient(() => ({ data: { message: 'boom' }, status: 500 }));
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
-    const errors: SardanapalClientError[] = [];
-    panel.error$.subscribe((error) => errors.push(error));
+    const errors: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => errors.push(error));
 
     await expect(firstValueFrom(panel.$getDictionary())).rejects.toBeInstanceOf(SardanapalHttpError);
 
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatchObject({ resource: 'orders', operation: 'getDictionary' });
-    expect(errors[0].error).toBeInstanceOf(SardanapalHttpError);
+    expect(errors[0]).toMatchObject({ resource: 'orders', operation: 'getDictionary', status: 500 });
   });
 
-  it('does not emit on error$ for a 2xx body with a failure status', async () => {
+  it('does not report a 2xx body with a failure status', async () => {
     const { client } = createClient(() => ({ data: { statusCode: StatusCode.Forbidden, userMessage: 'no' } }));
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
-    const errors: SardanapalClientError[] = [];
-    panel.error$.subscribe((error) => errors.push(error));
+    const errors: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => errors.push(error));
 
     await firstValueFrom(panel.$getDictionary());
 
     expect(errors).toEqual([]);
   });
 
-  it('emits a failed $getExcel once, with the decoded error', async () => {
-    const payload = { statusCode: StatusCode.Failed, userMessage: 'export failed' };
-    const { client } = createClient(() => ({ data: toBuffer(JSON.stringify(payload)), status: 500 }));
+  it('reports a failed $getExcel once, with the operation and the decoded body', async () => {
+    const bytes = toBuffer(JSON.stringify({ message: 'export failed' }));
+    const { client } = createClient(() => ({ data: bytes, status: 500 }));
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
-    const errors: SardanapalClientError[] = [];
-    panel.error$.subscribe((error) => errors.push(error));
+    const errors: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => errors.push(error));
 
-    await firstValueFrom(panel.$getExcel()).catch(() => undefined);
+    const error = await firstValueFrom(panel.$getExcel()).catch((e: unknown) => e);
 
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatchObject({ resource: 'orders', operation: 'getExcel' });
-    expect(errors[0].error).toMatchObject({ status: 500, body: payload });
+    expect(errors).toEqual([error]);
+    expect(errors[0]).toMatchObject({ resource: 'orders', operation: 'getExcel', status: 500 });
+    expect(errors[0].body).toEqual({ message: 'export failed' });
   });
 
-  it('emits a $getExcel transport failure on error$', async () => {
+  it('reports a $getExcel transport failure with the operation', async () => {
     const { client } = createClient(() => {
       throw new Error('network down');
     });
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
-    const errors: SardanapalClientError[] = [];
-    panel.error$.subscribe((error) => errors.push(error));
+    const errors: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => errors.push(error));
 
     await firstValueFrom(panel.$getExcel()).catch(() => undefined);
 
-    expect(errors).toMatchObject([{ operation: 'getExcel', message: 'network down' }]);
+    expect(errors).toMatchObject([{ operation: 'getExcel', resource: 'orders', message: 'network down' }]);
   });
 
-  it('does not emit when $getExcel succeeds', async () => {
+  it('does not report when $getExcel succeeds', async () => {
     const { client } = createClient(() => ({ data: new ArrayBuffer(1) }));
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
-    const errors: SardanapalClientError[] = [];
-    panel.error$.subscribe((error) => errors.push(error));
+    const errors: SardanapalHttpError[] = [];
+    client.httpError$.subscribe((error) => errors.push(error));
 
     await firstValueFrom(panel.$getExcel());
 
@@ -227,7 +212,13 @@ function createClient(
       responseType: config.responseType,
       body: typeof config.data === 'string' ? JSON.parse(config.data) : config.data,
     });
-    const result = handler(config);
+    let result: { data: unknown; status?: number };
+    try {
+      result = handler(config);
+    } catch (error) {
+      // An adapter rejects with an AxiosError that carries the request config.
+      throw new AxiosError(error instanceof Error ? error.message : String(error), AxiosError.ERR_NETWORK, config);
+    }
     return {
       data: result.data,
       status: result.status ?? 200,

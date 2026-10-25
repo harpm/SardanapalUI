@@ -1,4 +1,4 @@
-import { AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {
@@ -7,7 +7,6 @@ import {
   SardanapalHttpError,
   StatusCode,
   createGridSearchModel,
-  type SardanapalClientError,
 } from './index';
 
 const baseUrl = 'http://localhost:5000';
@@ -186,67 +185,95 @@ describe('crud client', () => {
     ]);
   });
 
-  describe('error$', () => {
-    it('does not emit for a 2xx body with a failure status', async () => {
+  describe('errors on client.httpError$', () => {
+    it('does not report a 2xx body with a failure status', async () => {
       const { client } = createClient(() => ({
         data: { statusCode: StatusCode.Duplicate, userMessage: 'already exists' },
       }));
       const crud = new SardanapalCrudClient<number, unknown, unknown, { title: string }>({ client, resource: 'orders' });
-      const errors: SardanapalClientError[] = [];
-      crud.error$.subscribe((error) => errors.push(error));
+      const errors: SardanapalHttpError[] = [];
+      client.httpError$.subscribe((error) => errors.push(error));
 
       await firstValueFrom(crud.$add({ title: 'x' }));
 
       expect(errors).toEqual([]);
     });
 
-    it('emits non-2xx responses and still rejects, once per request', async () => {
+    it('reports a non-2xx response once, with resource and operation, and still rejects', async () => {
       const { client } = createClient(() => ({ data: { message: 'boom' }, status: 500 }));
       const crud = new SardanapalCrudClient({ client, resource: 'orders' });
-      const errors: SardanapalClientError[] = [];
-      crud.error$.subscribe((error) => errors.push(error));
+      const errors: SardanapalHttpError[] = [];
+      client.httpError$.subscribe((error) => errors.push(error));
 
-      await expect(firstValueFrom(crud.$delete(3))).rejects.toBeInstanceOf(SardanapalHttpError);
+      const error = await firstValueFrom(crud.$delete(3)).catch((e: unknown) => e);
 
-      expect(errors).toHaveLength(1);
-      expect(errors[0]).toMatchObject({ resource: 'orders', operation: 'delete' });
-      expect(errors[0].error).toBeInstanceOf(SardanapalHttpError);
+      expect(error).toBeInstanceOf(SardanapalHttpError);
+      expect(errors).toEqual([error]);
+      expect(errors[0]).toMatchObject({ status: 500, resource: 'orders', operation: 'delete' });
     });
 
-    it('emits transport failures', async () => {
+    it('reports transport failures with the operation', async () => {
       const { client } = createClient(() => {
         throw new Error('network down');
       });
       const crud = new SardanapalCrudClient({ client, resource: 'orders' });
-      const errors: SardanapalClientError[] = [];
-      crud.error$.subscribe((error) => errors.push(error));
+      const errors: SardanapalHttpError[] = [];
+      client.httpError$.subscribe((error) => errors.push(error));
 
       await expect(firstValueFrom(crud.$getAll())).rejects.toMatchObject({ status: 0 });
 
-      expect(errors).toMatchObject([{ operation: 'getAll', message: 'network down' }]);
+      expect(errors).toMatchObject([{ operation: 'getAll', message: 'network down', resource: 'orders' }]);
     });
 
-    it('does not emit for successful requests', async () => {
+    it('reports every operation under its own name', async () => {
+      const { client } = createClient(() => ({ data: {}, status: 500 }));
+      const crud = new SardanapalCrudClient<number, unknown, unknown, unknown, unknown>({ client, resource: 'orders' });
+      const errors: SardanapalHttpError[] = [];
+      client.httpError$.subscribe((error) => errors.push(error));
+
+      for (const call of [
+        crud.$get(1),
+        crud.$getAll(),
+        crud.$add({}),
+        crud.$getEditable(1),
+        crud.$edit(1, {}),
+        crud.$delete(1),
+      ]) {
+        await firstValueFrom(call).catch(() => undefined);
+      }
+
+      expect(errors.map((error) => error.operation)).toEqual([
+        'get',
+        'getAll',
+        'add',
+        'getEditable',
+        'edit',
+        'delete',
+      ]);
+    });
+
+    it('does not report successful requests', async () => {
       const { client } = createClient(() => ({ data: succeeded(true) }));
       const crud = new SardanapalCrudClient({ client, resource: 'orders' });
-      const errors: SardanapalClientError[] = [];
-      crud.error$.subscribe((error) => errors.push(error));
+      const errors: SardanapalHttpError[] = [];
+      client.httpError$.subscribe((error) => errors.push(error));
 
       await firstValueFrom(crud.$delete(1));
 
       expect(errors).toEqual([]);
     });
 
-    it('only reports the failures of its own client instance', async () => {
-      const { client } = createClient(() => ({ data: { statusCode: StatusCode.Failed } }));
+    it('tells clients that share one http client apart by resource', async () => {
+      const { client } = createClient(() => ({ data: {}, status: 404 }));
       const orders = new SardanapalCrudClient({ client, resource: 'orders' });
       const users = new SardanapalCrudClient({ client, resource: 'users' });
-      const orderErrors: SardanapalClientError[] = [];
-      orders.error$.subscribe((error) => orderErrors.push(error));
+      const errors: SardanapalHttpError[] = [];
+      client.httpError$.subscribe((error) => errors.push(error));
 
-      await firstValueFrom(users.$get(1));
+      await firstValueFrom(users.$get(1)).catch(() => undefined);
+      await firstValueFrom(orders.$get(1)).catch(() => undefined);
 
-      expect(orderErrors).toEqual([]);
+      expect(errors.map((error) => error.resource)).toEqual(['users', 'orders']);
     });
   });
 
@@ -283,7 +310,13 @@ function createClient(
       url: config.url,
       body: typeof config.data === 'string' ? JSON.parse(config.data) : config.data,
     });
-    const result = handler(config);
+    let result: { data: unknown; status?: number };
+    try {
+      result = handler(config);
+    } catch (error) {
+      // An adapter rejects with an AxiosError that carries the request config.
+      throw new AxiosError(error instanceof Error ? error.message : String(error), AxiosError.ERR_NETWORK, config);
+    }
     return {
       data: result.data,
       status: result.status ?? 200,

@@ -44,7 +44,7 @@ export class Response<T = unknown> implements IResponse<T> {
   data?: T;
 
   /** `isSuccess` is derived from `statusCode`, so it is not accepted as a value. */
-  constructor(values: Omit<IResponse<T>, 'isSuccess'>) {
+  constructor(values: Omit<IResponse<T>, "isSuccess">) {
     this.serviceName = values.serviceName;
     this.operationType = values.operationType;
     this.statusCode = values.statusCode;
@@ -58,16 +58,18 @@ export class Response<T = unknown> implements IResponse<T> {
   }
 
   static from<T>(body: unknown): Response<T> {
-    if (!isEnvelope<T>(body)) {
-      throw new Error('Response is not an IResponse envelope.');
+    if (!Response.isEnvelope<T>(body)) {
+      throw new Error("Response is not an IResponse envelope.");
     }
     return new Response(body);
   }
-}
 
-function isEnvelope<T>(body: unknown): body is Omit<IResponse<T>, 'isSuccess'> {
-  return !!body
-    && typeof body === 'object'
-    && !Array.isArray(body)
-    && typeof (body as IResponse).statusCode === 'number';
+  static isEnvelope<T>(body: unknown): body is Omit<IResponse<T>, "isSuccess"> {
+    return (
+      !!body &&
+      typeof body === "object" &&
+      !Array.isArray(body) &&
+      typeof (body as IResponse).statusCode === "number"
+    );
+  }
 }

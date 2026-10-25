@@ -125,7 +125,13 @@ Method names match Core. There is no `Save` and no `Search`. Create is `add`. Li
 
 `SardanapalCrudClient` lives in `@sardanapal/client`. Like the auth service, each method carries the `$` prefix and returns an `Observable<IResponse<T>>`. axios deserializes the body and the method only supplies the type, so the body is returned exactly as received. `IResponse.isSuccess` is a readonly boolean the host sends (Core's `IsSuccess`), not a method. Check it and show `userMessage` yourself. A failure status inside a 2xx body is returned, not thrown. Non-2xx and transport failures reject with `SardanapalHttpError`. Pass the shared `SardanapalHttpClient` so calls carry the `AUTH` header.
 
-Every request that rejects (transport failure or non-2xx) is also emitted on the client's `error$` observable as a `SardanapalClientError` (`resource`, `operation`, `message`, `error`). A 2xx body with a failure `statusCode` is not emitted. `error$` covers only that client instance. `SardanapalHttpClient.httpError$` still covers every call on the shared client.
+There is one error type and one error stream. A request that fails (transport failure with `status` 0, or non-2xx) produces a single `SardanapalHttpError`. `SardanapalHttpClient` reports it once on its `SardanapalErrorChannel` (`client.errors.error$`, also `client.httpError$`) and rejects the call with the same instance. Calls made through a CRUD or panel client set `resource` and `operation` (for example `orders` and `getAll`) on the error, so a subscriber can tell them apart. Interceptors do not report: they throw a plain `SardanapalHttpError` and the client reports it. A 2xx body with a failure `statusCode` is not an error. Pass `errors` in the `SardanapalHttpClient` options to share one channel between several clients.
+
+```ts
+client.httpError$.subscribe((error) => {
+  console.warn(error.resource, error.operation, error.status, error.message);
+});
+```
 
 
 | Method         | Request           | Response `data`         | Default route                      |
@@ -167,7 +173,7 @@ Panel is CRUD plus. `SardanapalPanelClient` extends `SardanapalCrudClient` and t
 | `$getExcel`      | `GridSearchModel` | file bytes               | `POST {resource}/excel`      |
 
 
-`$getExcel` returns an `Observable<ArrayBuffer | Blob>` and does not read the JSON envelope. It always sends `pageSize: 0`. The file is read as `arraybuffer` by default, or as a `Blob` with `{ responseType: 'blob' }` in a browser. A failed call rejects with `SardanapalHttpError` whose `body` is the decoded JSON or text, not raw bytes.
+`$getExcel` returns an `Observable<ArrayBuffer | Blob>` and does not read the JSON envelope. It always sends `pageSize: 0`. The file is read as `arraybuffer` by default, or as a `Blob` with `{ responseType: 'blob' }` in a browser. A failed call rejects with `SardanapalHttpError`. Axios parses response bodies, and only JSON ones, but a failed binary response arrives as bytes. So the client decodes the body of a non-2xx `arraybuffer` or `blob` response before interceptors run: it becomes parsed JSON, or text when it is not JSON. The `body` of a failed `$getExcel` is therefore that decoded value, not the raw `ArrayBuffer` or `Blob`. A successful response is returned as bytes, untouched.
 
 
 `GridSearchModel` fields:

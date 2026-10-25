@@ -192,13 +192,13 @@ export class SardanapalAuthService {
 
     if (status === 401) {
       this.clearToken();
-      throw this.client.reportHttpError(new SardanapalHttpError('Unauthorized', 401, response.data));
+      throw new SardanapalHttpError('Unauthorized', 401, response.data);
     }
 
     if (status === 403 && this.isPasswordChangeBody(response.data)) {
       this.passwordChangeRequired = true;
       this.publish();
-      throw this.client.reportHttpError(new SardanapalHttpError(SardanapalAuthService.PASSWORD_CHANGE_MESSAGE, 403, response.data, true));
+      throw new SardanapalHttpError(SardanapalAuthService.PASSWORD_CHANGE_MESSAGE, 403, response.data, true);
     }
   }
 

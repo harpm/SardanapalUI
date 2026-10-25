@@ -248,7 +248,28 @@ Direction is a UI concern.
 - `setDirection('ltr' | 'rtl')` sets `document.documentElement.dir` and emits on `directionChanged$` only when the direction actually changes. The stream does not replay; read `getDirection()` for the current value.
 - Persist the choice through the same kind of storage adapter the auth cache uses.
 - Language is a separate concern.
-- The Angular bridge subscribes to `directionChanged$` and sets the ng-zorro locale and the same `dir`, so overlays flip with the page.
+- The Angular bridge (`SardanapalNgDirectionBridge`) subscribes to `directionChanged$` and pushes the value into the CDK `Directionality`, which ng-zorro components and overlays read. The CDK service reads `dir` from the page only once, so without the bridge a later change would not reach ng-zorro. The locale is handled by `SardanapalNgLocaleService`, not by the bridge.
+
+## Angular bridge
+
+Lives in `@sardanapal/ng`. A host registers it once:
+
+```ts
+export const appConfig: ApplicationConfig = {
+  providers: [SardanapalNg.providers({ apiBaseUrl: 'https://host/api' })],
+};
+```
+
+`SardanapalNg.providers(options)` registers, under injection tokens, one shared `SardanapalHttpClient` (`SARDANAPAL_HTTP_CLIENT`), a `SardanapalAuthService` built on it (`SARDANAPAL_AUTH_SERVICE`) and a `SardanapalDirectionService` (`SARDANAPAL_DIRECTION_SERVICE`). Options: `apiBaseUrl`, `http` (`adapter`, `errors`), `auth` (every auth option except `apiBaseUrl`, `client`, `adapter`), `direction`, and `errorToasts` (default `true`). Build CRUD, panel and account clients with `client: inject(SARDANAPAL_HTTP_CLIENT)` or `auth: inject(SARDANAPAL_AUTH_SERVICE)` so their calls carry the `AUTH` header.
+
+| Class | Role |
+| --- | --- |
+| `SardanapalNgDirectionBridge` | Starts with the providers. Keeps the CDK `Directionality` in step with `directionChanged$`. |
+| `SardanapalNgErrorToasts` | Starts with the providers unless `errorToasts` is `false`. Shows each failed request once as an ng-zorro message: the envelope `userMessage` when the error body has one, else the error message. A 2xx failure envelope is not shown (the caller shows `userMessage`). A password-change 403 is skipped: send the user to change-password instead. |
+| `SardanapalNgLocaleService` | `setCulture(culture)` sets the ng-zorro locale (`fa*` is `fa_IR`, everything else `en_US`) and `lang` on the page. It never touches direction. |
+| `SardanapalControlBase<T>` | Base of every editing control. Implements `ControlValueAccessor` once and registers itself with its own `NgControl`, so a control needs no `NG_VALUE_ACCESSOR` provider. A subclass reads `value()` and `disabled()`, calls `updateValue` on input and `markTouched` on blur. |
+
+Language and direction stay separate. Whoever changes the language calls `SardanapalNgLocaleService.setCulture` and `SardanapalDirectionService.setDirection` (the demo app does both).
 
 ## Components
 

@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "peerDependencies": {
+    "@angular/cdk": "^22.0.0",
     "@angular/common": "^22.0.0",
     "@angular/core": "^22.0.0",
     "@angular/forms": "^22.0.0",
-    "ng-zorro-antd": "^22.1.0"
+    "ng-zorro-antd": "^22.1.0",
+    "rxjs": "^7.4.0"
   },
   "dependencies": {
     "@sardanapal/client": "0.0.0",

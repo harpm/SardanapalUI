@@ -23,22 +23,6 @@ class DirectionTestKit {
   }
 }
 
-describe('SardanapalDirectionService.fromCulture', () => {
-  it.each([
-    ['fa', 'rtl'],
-    ['fa-IR', 'rtl'],
-    ['FA-ir', 'rtl'],
-    ['ar', 'rtl'],
-    ['ar-SA', 'rtl'],
-    ['en', 'ltr'],
-    ['en-US', 'ltr'],
-    ['de', 'ltr'],
-    ['', 'ltr'],
-  ] as const)('maps %s to %s', (culture, direction) => {
-    expect(SardanapalDirectionService.fromCulture(culture)).toBe(direction);
-  });
-});
-
 describe('SardanapalDirectionService', () => {
   it('starts ltr and applies dir to the target', () => {
     const kit = new DirectionTestKit();

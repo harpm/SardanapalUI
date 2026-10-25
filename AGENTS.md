@@ -33,7 +33,7 @@ Three packages. Do not fold the HTTP client into the Angular library. Core and I
 | Package              | Role                                                                                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@sardanapal/client` | Core side: `SardanapalHttpClient` (transport and interceptor hooks), `SardanapalHttpError`, the `IResponse<T>` envelope, storage adapters, direction, CRUD, and panel calls. No Angular dependency. |
-| `@sardanapal/identity-client` | Identity side: `SardanapalAuthService` (login, token cache, automatic refresh, session) and `SardanapalJwtService` (claims). Plugs into the core client as an interceptor. No Angular dependency. |
+| `@sardanapal/identity-client` | Identity side: `SardanapalAuthService` (login, token cache, automatic refresh, session) and `SardanapalJwtService` (claims), plus `SardanapalAccountClient` and `SardanapalOtpAccountClient` (register, edit, change password, OTP flows). Plugs into the core client as an interceptor. No Angular dependency. |
 | `@sardanapal/ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on both clients. |
 
 
@@ -91,6 +91,7 @@ Show `userMessage` when `isSuccess` is false. Treat `statusCode === 0` as succes
 
 The client takes a configurable endpoint map (`apiBaseUrl` plus a path per method, overridable per resource). Do not hardcode one URL scheme as if Core or Identity published it. A host that has not chosen routes yet can follow this default, still overridable:
 
+#### Crud and Panel endpoints
 ```
 GET {apiBaseUrl}/{resource}/{id}
 POST {apiBaseUrl}/{resource}/get-all
@@ -100,8 +101,23 @@ PUT {apiBaseUrl}/{resource}/{id}
 DELETE {apiBaseUrl}/{resource}/{id}
 POST {apiBaseUrl}/{resource}/dictionary
 POST {apiBaseUrl}/{resource}/excel
+```
+#### Identity endpoints
+```
 POST {apiBaseUrl}/account/login
 POST {apiBaseUrl}/account/refresh          optional
+POST {apiBaseUrl}/account/register
+GET {apiBaseUrl}/account/get-editable/{id}
+PUT {apiBaseUrl}/account/{id}
+DELETE {apiBaseUrl}/account/{id}
+POST {apiBaseUrl}/account/change-password
+POST {apiBaseUrl}/account/change-user-password
+POST {apiBaseUrl}/account/request-login-otp
+POST {apiBaseUrl}/account/login-with-otp
+POST {apiBaseUrl}/account/request-register-otp
+POST {apiBaseUrl}/account/register-with-otp
+POST {apiBaseUrl}/account/request-reset-password
+POST {apiBaseUrl}/account/reset-password
 ```
 
 `get-excel` returns file bytes, not the JSON envelope.
@@ -123,6 +139,30 @@ Lives in `@sardanapal/identity-client`. Matches the Identity account and token s
 - Claims to read: `id`, `sd_roles`, `AccessRight`, `sd_controller_action`, `must_change_pw`.
 
 `IAccountService.RefreshToken(userId)` returns `IResponse<string>` whose `data` is a new JWT. It is optional and it is not an OAuth refresh grant. Prefer the `AUTH` response header when the host uses sliding refresh.
+
+### Account and OTP
+
+Live in `@sardanapal/identity-client`. `SardanapalAccountClient` matches `IAccountService` (everything except `Login` and `RefreshToken`, which stay on `SardanapalAuthService`). `SardanapalOtpAccountClient` extends it with `IOtpAccountService`. Both take `{ auth, endpoints? }` and send through `auth.$request`, so calls share the HTTP client and carry the `AUTH` header. Methods carry the `$` prefix and return the body as received, like the CRUD client. Override any route with `endpoints`.
+
+| Method | Request | Response `data` | Default route | `AUTH` |
+| --- | --- | --- | --- | --- |
+| `$register` | `RegisterModel` | new user key | `POST account/register` | sent |
+| `$getEditable` | key | `UserEditableModel` | `GET account/get-editable/{id}` | sent |
+| `$edit` | key + `UserEditableModel` | `boolean` | `PUT account/{id}` | sent |
+| `$delete` | key | `boolean` | `DELETE account/{id}` | sent |
+| `$changePassword` | `{ username, oldPassword, newPassword }` | `boolean` | `POST account/change-password` | not sent |
+| `$changeUserPassword` | `{ userId, newPassword }` | `boolean` | `POST account/change-user-password` | sent |
+| `$requestLoginOtp` | `{ email or phoneNumber, role }` | user key, if the host returns it | `POST account/request-login-otp` | not sent |
+| `$loginWithOtp` | `{ userId, roleId, code }` | `{ token }`, stored like `$login` | `POST account/login-with-otp` | not sent |
+| `$requestRegisterOtp` | `{ email or phoneNumber, role }` | user key, if the host returns it | `POST account/request-register-otp` | not sent |
+| `$registerWithOtp` | `{ userId, roleId, code }` | `boolean` | `POST account/register-with-otp` | not sent |
+| `$requestResetPassword` | `{ email or phoneNumber }` | user key | `POST account/request-reset-password` | not sent |
+| `$resetPassword` | `{ userId, roleId, code, newPassword }` | `boolean` | `POST account/reset-password` | not sent |
+
+- "Not sent" calls skip the `AUTH` header and do not trigger a refresh, so a stale token cannot turn them into a 401.
+- `$changePassword` proves the old password and is the call a `must_change_pw` user makes: the Identity authorize filter rejects every other authorized call with 403 until the password changes. The cached token still carries `must_change_pw` afterwards, so log in again.
+- `SardanapalAuthService.setToken(token)` stores a token obtained outside `$login`. `$loginWithOtp` uses it, and only when `statusCode` is `0` and `data.token` is set.
+- Property names are camelCase on the wire. Failed calls reject with `SardanapalHttpError`. These clients do not set `resource` or `operation` on it.
 
 ### CRUD
 

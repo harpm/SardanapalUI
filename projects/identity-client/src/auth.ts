@@ -133,6 +133,17 @@ export class SardanapalAuthService {
     );
   }
 
+  /**
+   * Stores a token obtained outside `$login`, for example from an OTP login.
+   * The session stream and the `AUTH` header pick it up like a normal login.
+   */
+  setToken(token: string): void {
+    if (!token?.trim()) {
+      throw new Error('token is required.');
+    }
+    this.storeToken(token);
+  }
+
   $refresh(): Observable<IResponse<string>> {
     if (!this.refreshInFlight$) {
       this.refreshInFlight$ = this.performRefresh().pipe(

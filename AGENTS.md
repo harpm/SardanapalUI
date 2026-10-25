@@ -43,15 +43,22 @@ Keep ng-zorro. It covers the first controls, ships a `fa_IR` locale, and flips l
 
 ## Commands
 
-Once the workspace exists:
-
 ```bash
-npm install
-npm test
-npm run build
+npm install          # see "Toolchain" below for the registry and Node notes
+npm test             # client and identity-client (vitest), then @sardanapal/ng (ng test)
+npm run build        # clients (tsc), then ng build ng, then ng build demo
+npm start            # builds the clients, then serves the demo app
 ```
 
-There is no test suite until the packages exist. When tests exist, run them before any commit. Do not commit while tests are failing.
+Run the tests before any commit. Do not commit while tests are failing.
+
+### Toolchain
+
+- **Angular 22 needs Node `^22.22.3`, `^24.15` or newer.** The machine's system Node can be older, so the repo carries its own: the devDependency `node` (Node 24) puts a `node` shim in `node_modules/.bin`. `npm run` scripts put that folder first on `PATH`, so `ng`, `vitest` and `tsc` run on it. Do not rely on `node -v` in a plain shell; use `npm run <script>` or `npx ng ...` after putting `node_modules/.bin` first on `PATH`.
+- **Registry.** The lockfile resolves from `registry.npmjs.org`. If the user's npm config points at a private feed with an expired credential, pass `--registry=https://registry.npmjs.org/` (or set `npm_config_registry`) for that command. Do not edit the user's `.npmrc`.
+- **npm 10.9 crashes** (`Cannot read properties of null (reading 'edgesOut')`) when the workspace peer sets are resolved. Install with npm 11 instead: `npx --yes npm@11 install`. npm 11 only runs install scripts that are allow-listed. `allowScripts` in the root `package.json` allows the `node` package, whose preinstall downloads the Node binary. When a new dependency needs an install script, review it with `npx npm@11 install-scripts ls` before approving it.
+- **TypeScript.** `ng-packagr` 22 requires TypeScript `>=6.0 <6.1`, so the root and the Angular packages use 6.0. `@sardanapal/client` and `@sardanapal/identity-client` stay on 5.9 (npm nests that copy under each package). Vitest is `^4` everywhere.
+- **Path mapping.** The root `tsconfig.json` maps `@sardanapal/ng` to the library source, so the demo app does not need the library built first. It does need the two clients built (`npm run build:clients`), because they resolve through their `dist`.
 
 ## Workflow rules
 

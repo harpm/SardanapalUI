@@ -1,0 +1,17 @@
+{
+  "name": "@sardanapal/ng",
+  "version": "0.0.0",
+  "private": true,
+  "peerDependencies": {
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0",
+    "@angular/forms": "^22.0.0",
+    "ng-zorro-antd": "^22.1.0"
+  },
+  "dependencies": {
+    "@sardanapal/client": "0.0.0",
+    "@sardanapal/identity-client": "0.0.0",
+    "tslib": "^2.8.1"
+  },
+  "sideEffects": false
+}

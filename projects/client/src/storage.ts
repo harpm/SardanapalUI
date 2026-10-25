@@ -4,19 +4,20 @@ export interface KeyValueStorage {
   remove(key: string): void;
 }
 
-export function memoryStorage(): KeyValueStorage {
-  const values = new Map<string, string>();
-  return {
-    get(key: string): string | null {
-      return values.get(key) ?? null;
-    },
-    set(key: string, value: string): void {
-      values.set(key, value);
-    },
-    remove(key: string): void {
-      values.delete(key);
-    },
-  };
+export class MemoryStorage implements KeyValueStorage {
+  private readonly values = new Map<string, string>();
+
+  get(key: string): string | null {
+    return this.values.get(key) ?? null;
+  }
+
+  set(key: string, value: string): void {
+    this.values.set(key, value);
+  }
+
+  remove(key: string): void {
+    this.values.delete(key);
+  }
 }
 
 export interface BrowserStorage {
@@ -25,16 +26,18 @@ export interface BrowserStorage {
   removeItem(key: string): void;
 }
 
-export function browserStorage(storage: BrowserStorage): KeyValueStorage {
-  return {
-    get(key: string): string | null {
-      return storage.getItem(key);
-    },
-    set(key: string, value: string): void {
-      storage.setItem(key, value);
-    },
-    remove(key: string): void {
-      storage.removeItem(key);
-    },
-  };
+export class BrowserStorageAdapter implements KeyValueStorage {
+  constructor(private readonly storage: BrowserStorage) {}
+
+  get(key: string): string | null {
+    return this.storage.getItem(key);
+  }
+
+  set(key: string, value: string): void {
+    this.storage.setItem(key, value);
+  }
+
+  remove(key: string): void {
+    this.storage.removeItem(key);
+  }
 }

@@ -6,7 +6,7 @@ import {
   SardanapalHttpClient,
   SardanapalHttpError,
   StatusCode,
-  createGridSearchModel,
+  GridSearchModelFactory,
 } from './index';
 
 const baseUrl = 'http://localhost:5000';
@@ -19,7 +19,7 @@ interface Recorded {
 
 describe('grid search model', () => {
   it('applies the Core defaults', () => {
-    expect(createGridSearchModel()).toEqual({
+    expect(GridSearchModelFactory.create()).toEqual({
       sortAscending: true,
       pageIndex: 0,
       pageSize: 25,
@@ -28,7 +28,7 @@ describe('grid search model', () => {
   });
 
   it('keeps overrides and ignores undefined values', () => {
-    const model = createGridSearchModel({ pageSize: 0, sortId: 'name', pageIndex: undefined, fields: null });
+    const model = GridSearchModelFactory.create({ pageSize: 0, sortId: 'name', pageIndex: undefined, fields: null });
 
     expect(model).toMatchObject({ pageSize: 0, sortId: 'name', pageIndex: 0, fields: null });
   });

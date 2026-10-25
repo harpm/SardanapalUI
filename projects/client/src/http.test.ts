@@ -8,8 +8,8 @@ import {
   SardanapalHttpClient,
   SardanapalHttpError,
   StatusCode,
-  browserStorage,
-  memoryStorage,
+  BrowserStorageAdapter,
+  MemoryStorage,
 } from './index';
 
 const baseUrl = 'http://localhost:5000';
@@ -229,8 +229,8 @@ describe('response envelope', () => {
 
 describe('storage', () => {
   it('memory storage keeps values per instance', () => {
-    const first = memoryStorage();
-    const second = memoryStorage();
+    const first = new MemoryStorage();
+    const second = new MemoryStorage();
     first.set('k', 'v');
 
     expect(first.get('k')).toBe('v');
@@ -241,7 +241,7 @@ describe('storage', () => {
 
   it('browser storage adapts a Storage-like object', () => {
     const values = new Map<string, string>();
-    const storage = browserStorage({
+    const storage = new BrowserStorageAdapter({
       getItem: (key) => values.get(key) ?? null,
       setItem: (key, value) => values.set(key, value),
       removeItem: (key) => values.delete(key),

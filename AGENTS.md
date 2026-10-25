@@ -159,7 +159,7 @@ orders.$getAll({ fields: { name: 'a' }, pageIndex: 1 }).subscribe((result) => {
 });
 ```
 
-A partial `GridSearchModel` is completed with the defaults below (`createGridSearchModel`).
+A partial `GridSearchModel` is completed with the defaults below (`GridSearchModelFactory.create`).
 
 
 ### Panel

@@ -9,7 +9,7 @@ import {
   Response,
   SardanapalHttpClient,
   SardanapalHttpError,
-  memoryStorage,
+  MemoryStorage,
   type IResponse,
   type KeyValueStorage,
 } from '@sardanapal/client';
@@ -102,7 +102,7 @@ export class SardanapalAuthService {
     });
     this.httpError$ = this.client.httpError$;
     this.endpoints = { ...defaultEndpoints, ...options.endpoints };
-    this.storage = options.tokenStorage ?? memoryStorage();
+    this.storage = options.tokenStorage ?? new MemoryStorage();
     this.refreshThresholdMinutes = options.refreshThresholdMinutes ?? 10;
     this.refreshUrlOption = options.refreshUrl;
 

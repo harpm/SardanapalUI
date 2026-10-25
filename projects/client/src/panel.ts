@@ -5,7 +5,7 @@ import {
   type CrudEndpointMap,
   type SardanapalCrudClientOptions,
 } from './crud';
-import { createGridSearchModel, type EntityKey, type GridResult, type GridSearchModel, type SelectOption } from './grid';
+import { GridSearchModelFactory, type EntityKey, type GridResult, type GridSearchModel, type SelectOption } from './grid';
 import type { IResponse } from './response';
 
 /**
@@ -58,7 +58,7 @@ export class SardanapalPanelClient<
     return this.$send<GridResult<SelectOption<TKey>, TKey>>(
       'getDictionary',
       this.buildPath(this.endpoints.getDictionary),
-      { method: 'POST', data: createGridSearchModel(model) },
+      { method: 'POST', data: GridSearchModelFactory.create(model) },
     );
   }
 
@@ -72,7 +72,7 @@ export class SardanapalPanelClient<
     model?: Partial<GridSearchModel<TKey, TSearch>> | null,
     options?: GetExcelOptions,
   ): Observable<ArrayBuffer | Blob> {
-    const data = { ...createGridSearchModel(model), pageSize: 0 };
+    const data = { ...GridSearchModelFactory.create(model), pageSize: 0 };
     return this.$call<ArrayBuffer | Blob>(
       'getExcel',
       this.buildPath(this.endpoints.getExcel),

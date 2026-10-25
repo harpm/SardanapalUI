@@ -2,8 +2,8 @@ import axios, { AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig
 import {
   SardanapalHttpClient,
   SardanapalHttpError,
-  browserStorage,
-  memoryStorage,
+  BrowserStorageAdapter,
+  MemoryStorage,
 } from '@sardanapal/client';
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
@@ -290,7 +290,7 @@ describe('auth', () => {
   it('persists the token through a storage adapter', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
     const values = new Map<string, string>();
-    const storage = browserStorage({
+    const storage = new BrowserStorageAdapter({
       getItem: (key) => values.get(key) ?? null,
       setItem: (key, value) => values.set(key, value),
       removeItem: (key) => values.delete(key),
@@ -344,7 +344,7 @@ describe('auth', () => {
   });
 
   it('uses the supplied memory storage', () => {
-    const storage = memoryStorage();
+    const storage = new MemoryStorage();
     storage.set('sardanapal.auth.token', 'saved');
     expect(storage.get('sardanapal.auth.token')).toBe('saved');
     storage.remove('sardanapal.auth.token');
@@ -391,7 +391,7 @@ function createClient(
   options: {
     refreshUrl?: boolean | string;
     refreshThresholdMinutes?: number;
-    tokenStorage?: ReturnType<typeof memoryStorage>;
+    tokenStorage?: MemoryStorage;
   } = {},
 ) {
   const calls: InternalAxiosRequestConfig[] = [];

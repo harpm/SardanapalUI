@@ -3,7 +3,7 @@ import type { AxiosRequestConfig } from "axios";
 import type { ClientOperation } from "./errors";
 import type { SardanapalHttpClient } from "./http";
 import {
-  createGridSearchModel,
+  GridSearchModelFactory,
   type EntityKey,
   type GridResult,
   type GridSearchModel,
@@ -106,7 +106,7 @@ export class SardanapalCrudClient<
     return this.$send<GridResult<TItem, TKey>>(
       "getAll",
       this.buildPath(this.endpoints.getAll),
-      { method: "POST", data: createGridSearchModel(model) },
+      { method: "POST", data: GridSearchModelFactory.create(model) },
     );
   }
 

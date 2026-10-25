@@ -45,31 +45,35 @@ export interface SelectOption<
 
 export const DEFAULT_PAGE_SIZE = 25;
 
-/**
- * Builds a complete search model. Missing values and `undefined` overrides
- * fall back to the Core defaults (`sortAscending` true, `pageIndex` 0,
- * `pageSize` 25, `totalCount` 0).
- */
-export function createGridSearchModel<
-  TKey extends EntityKey = EntityKey,
-  TSearch = unknown,
->(
-  overrides?: Partial<GridSearchModel<TKey, TSearch>> | null,
-): GridSearchModel<TKey, TSearch> {
-  const model: GridSearchModel<TKey, TSearch> = {
-    sortAscending: true,
-    pageIndex: 0,
-    pageSize: DEFAULT_PAGE_SIZE,
-    totalCount: 0,
-  };
+export class GridSearchModelFactory {
+  private constructor() {}
 
-  if (overrides) {
-    for (const [name, value] of Object.entries(overrides)) {
-      if (value !== undefined) {
-        (model as unknown as Record<string, unknown>)[name] = value;
+  /**
+   * Builds a complete search model. Missing values and `undefined` overrides
+   * fall back to the Core defaults (`sortAscending` true, `pageIndex` 0,
+   * `pageSize` 25, `totalCount` 0).
+   */
+  static create<
+    TKey extends EntityKey = EntityKey,
+    TSearch = unknown,
+  >(
+    overrides?: Partial<GridSearchModel<TKey, TSearch>> | null,
+  ): GridSearchModel<TKey, TSearch> {
+    const model: GridSearchModel<TKey, TSearch> = {
+      sortAscending: true,
+      pageIndex: 0,
+      pageSize: DEFAULT_PAGE_SIZE,
+      totalCount: 0,
+    };
+
+    if (overrides) {
+      for (const [name, value] of Object.entries(overrides)) {
+        if (value !== undefined) {
+          (model as unknown as Record<string, unknown>)[name] = value;
+        }
       }
     }
-  }
 
-  return model;
+    return model;
+  }
 }

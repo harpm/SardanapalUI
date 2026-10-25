@@ -64,6 +64,11 @@ These rules govern how an agent operates in this repo. Follow them strictly.
 5. **Do not commit if the tests are failing.** Run the test suite before committing. If any test fails, fix the failure before staging the commit.
 6. **Do not commit secrets** (tokens, `.env` files, signing keys).
 
+## Code style rules
+
+7. **Write object-oriented code only.** Behavior lives in classes. Helpers go in the class that uses them as `private` methods (or `private static` when they need no instance state). Do not add free-standing functions or module-level function-valued constants (`function foo()`, `const foo = () => ...`), exported or not. Shared behavior goes in a class, a base class, or a composed collaborator class.
+8. **Raw functions are allowed only in special circumstances,** such as a framework or tool that requires one (for example a test-file helper that the runner expects, or a config file that must export a function). Keep each exception minimal and add a one-line comment saying why a class cannot be used. If it is not obviously such a case, ask the user first.
+
 ## Wire protocol
 
 Every response body is the Core envelope. Property names on the wire are camelCase.

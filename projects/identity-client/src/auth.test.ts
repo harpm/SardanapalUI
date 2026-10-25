@@ -2,6 +2,7 @@ import axios, { AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig
 import {
   SardanapalHttpClient,
   SardanapalHttpError,
+  SardanapalPanelClient,
   BrowserStorageAdapter,
   MemoryStorage,
 } from '@sardanapal/client';
@@ -172,6 +173,86 @@ describe('auth', () => {
     const error = await firstValueFrom(client.$request('/orders')).catch((caught: unknown) => caught);
 
     expect(httpErrors).toEqual([error]);
+    errors.unsubscribe();
+  });
+
+  it('surfaces mustChangePassword when the password-change 403 arrives as an arraybuffer', async () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const body = new TextEncoder().encode(JSON.stringify({ message: 'Password change required.' }));
+    const { client } = createClient(async (url) => {
+      if (url.endsWith('/account/login')) {
+        return { data: envelope({ token: accessToken }) };
+      }
+      return { data: body.buffer, status: 403 };
+    });
+    await firstValueFrom(client.$login('ada', 'secret'));
+
+    const error = await firstValueFrom(
+      client.$request('/orders/excel', { responseType: 'arraybuffer' }),
+    ).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(SardanapalHttpError);
+    expect(error).toMatchObject({
+      status: 403,
+      mustChangePassword: true,
+      body: { message: 'Password change required.' },
+    });
+    expect(client.getSession().token).toBe(accessToken);
+    expect(client.getSession().mustChangePassword).toBe(true);
+  });
+
+  it('surfaces mustChangePassword when the password-change 403 arrives as a blob', async () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const { client } = createClient(async (url) => {
+      if (url.endsWith('/account/login')) {
+        return { data: envelope({ token: accessToken }) };
+      }
+      return {
+        data: new Blob([JSON.stringify({ message: 'Password change required.' })]),
+        status: 403,
+      };
+    });
+    await firstValueFrom(client.$login('ada', 'secret'));
+
+    const error = await firstValueFrom(
+      client.$request('/orders/excel', { responseType: 'blob' }),
+    ).catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({ status: 403, mustChangePassword: true });
+    expect(client.getSession().mustChangePassword).toBe(true);
+  });
+
+  it('surfaces mustChangePassword on a failed $getExcel through a shared client', async () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const body = new TextEncoder().encode(JSON.stringify({ message: 'Password change required.' }));
+    const adapter: AxiosAdapter = async (config) => {
+      const isLogin = axios.getUri(config).endsWith('/account/login');
+      return {
+        data: isLogin ? envelope({ token: accessToken }) : body.buffer,
+        status: isLogin ? 200 : 403,
+        statusText: isLogin ? 'OK' : 'Error',
+        headers: AxiosHeaders.from({}),
+        config,
+      };
+    };
+    const http = new SardanapalHttpClient({ apiBaseUrl: baseUrl, adapter });
+    const auth = new SardanapalAuthService({ client: http });
+    const orders = new SardanapalPanelClient({ client: http, resource: 'orders' });
+    const httpErrors: SardanapalHttpError[] = [];
+    const errors = http.httpError$.subscribe((error) => httpErrors.push(error));
+    await firstValueFrom(auth.$login('ada', 'secret'));
+
+    const error = await firstValueFrom(orders.$getExcel({})).catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      status: 403,
+      mustChangePassword: true,
+      resource: 'orders',
+      operation: 'getExcel',
+    });
+    expect(httpErrors).toEqual([error]);
+    expect(auth.getSession().token).toBe(accessToken);
+    expect(auth.getSession().mustChangePassword).toBe(true);
     errors.unsubscribe();
   });
 

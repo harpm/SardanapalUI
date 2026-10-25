@@ -195,12 +195,13 @@ Panel is CRUD plus. `SardanapalPanelClient` extends `SardanapalCrudClient` and t
 
 ### Direction
 
-Direction is a UI concern. Core has `en` and `fa-IR` strings and no `dir` flag.
+Direction is a UI concern.
 
-- `fa`, `fa-IR`, and `ar` map to `rtl`. Every other culture maps to `ltr`.
-- Set `document.documentElement.lang` and `document.documentElement.dir`.
+- `SardanapalDirectionService` owns direction only. It knows nothing about language or culture, and it never sets `lang`.
+- `setDirection('ltr' | 'rtl')` sets `document.documentElement.dir` and emits on `directionChanged$` only when the direction actually changes. The stream does not replay; read `getDirection()` for the current value.
 - Persist the choice through the same kind of storage adapter the auth cache uses.
-- The Angular bridge sets the ng-zorro locale to `en_US` or `fa_IR` and the same `dir`, so overlays flip with the page.
+- Language is a separate concern.
+- The Angular bridge subscribes to `directionChanged$` and sets the ng-zorro locale and the same `dir`, so overlays flip with the page.
 
 ## Components
 

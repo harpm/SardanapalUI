@@ -7,6 +7,12 @@ export type {
 } from './http';
 export { MemoryStorage, BrowserStorageAdapter } from './storage';
 export type { KeyValueStorage, BrowserStorage } from './storage';
+export { SardanapalDirectionService } from './direction';
+export type {
+  DirectionTarget,
+  SardanapalDirectionServiceOptions,
+  TextDirection,
+} from './direction';
 export { StatusCode, OperationType, Response } from './response';
 export type { IResponse } from './response';
 export { GridSearchModelFactory, DEFAULT_PAGE_SIZE } from './grid';

@@ -260,7 +260,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-`SardanapalNg.providers(options)` registers, under injection tokens, one shared `SardanapalHttpClient` (`SARDANAPAL_HTTP_CLIENT`), a `SardanapalAuthService` built on it (`SARDANAPAL_AUTH_SERVICE`) and a `SardanapalDirectionService` (`SARDANAPAL_DIRECTION_SERVICE`). Options: `apiBaseUrl`, `http` (`adapter`, `errors`), `auth` (every auth option except `apiBaseUrl`, `client`, `adapter`), `direction`, and `errorToasts` (default `true`). Build CRUD, panel and account clients with `client: inject(SARDANAPAL_HTTP_CLIENT)` or `auth: inject(SARDANAPAL_AUTH_SERVICE)` so their calls carry the `AUTH` header.
+`SardanapalNg.providers(options)` registers, under injection tokens, one shared `SardanapalHttpClient` (`SARDANAPAL_HTTP_CLIENT`), a `SardanapalAuthService` built on it (`SARDANAPAL_AUTH_SERVICE`) and a `SardanapalDirectionService` (`SARDANAPAL_DIRECTION_SERVICE`). It also registers ng-zorro's native date adapter so `s-date` works. Options: `apiBaseUrl`, `http` (`adapter`, `errors`), `auth` (every auth option except `apiBaseUrl`, `client`, `adapter`), `direction`, and `errorToasts` (default `true`). Build CRUD, panel and account clients with `client: inject(SARDANAPAL_HTTP_CLIENT)` or `auth: inject(SARDANAPAL_AUTH_SERVICE)` so their calls carry the `AUTH` header.
 
 | Class | Role |
 | --- | --- |
@@ -283,6 +283,10 @@ Selectors are `s-<kebab-name>`. An editing control implements `ControlValueAcces
 | `s-text-area` | `textarea` `nz-input` | Multi-line text                    |
 | `s-numeric`   | `nz-input-number`     | Number                             |
 | `s-select`    | `nz-select`           | Static options, or `getDictionary` |
+| `s-date`      | `nz-date-picker`      | Date, optional time                |
+| `s-checkbox`  | `nz-checkbox`         | Boolean                            |
+| `s-switch`    | `nz-switch`           | Boolean                            |
+| `s-password`  | `nz-input-password`   | Secret text                        |
 | `s-grid`      | `nz-table`            | Page and sort through `getAll`     |
 
 Inputs and behavior:
@@ -291,16 +295,20 @@ Inputs and behavior:
 - `s-text-box`, `s-text-area`: `placeholder`, `readonly`, `maxLength`, `size`, `status`, and `rows` on the area. They share `SardanapalTextControlBase`. An emptied control gives `''`, as a native input does, so `Validators.required` works.
 - `s-numeric`: `min`, `max`, `step`, `precision`, `placeholder`, `readonly`, `size`. An emptied control gives `null`.
 - `s-select`: the value is a key, or an array of keys with `multiple`. Options come from `options` (`{ key, value }`, `value` is the label) or from `dictionary`, a panel client. With `dictionary` it loads one page (`dictionaryPageSize`) when it is created and whenever `dictionary` or `dictionaryFields` changes, and it sends the typed text, after 300 ms, as `dynamicField`. `dictionaryFields` is sent as `fields`. A failed load leaves the list empty; the error is already on the shared channel.
+- `s-date`: a `Date`, or `null` when empty. Inputs: `placeholder`, `format` (default `yyyy-MM-dd`), `showTime`, `allowClear`, `readonly`, `size`, `disabledDate`. Touched when the panel closes.
+- `s-checkbox`: `true` or `false`. `null` from the form shows as unchecked. Inputs: `label`, `indeterminate`.
+- `s-switch`: `true` or `false`. `null` from the form shows as off. Inputs: `checkedText`, `uncheckedText`, `size` (`default` or `small`).
+- `s-password`: same text inputs as `s-text-box`, plus `visibilityToggle` (default true). An emptied control gives `''`.
 - `s-grid`: `client` (a CRUD or panel client), `columns` (`SardanapalGridColumn`: `field` with dotted paths, `title`, `sortable`, `width`, `align`, `format`), `searchFields`, `pageSize`, `pageSizeOptions`, `showSizeChanger`, `size`, `rowKey`, `sortId`, `sortAscending`; output `loaded`; method `reload()`. It loads when created and returns to the first page when `client`, `searchFields` or `pageSize` changes (pass a new `searchFields` object to search again). Sorting and paging go to the host. A failure envelope shows its `userMessage`; the Excel export is not part of the grid.
 
 Inputs and outputs use the `@Input()` and `@Output()` decorators, not the signal `input()` and `output()` functions. A control that must react to an input change does it in `ngOnChanges`. Internal state (`value`, `disabled`, loaded rows, loading) stays in `signal()`.
 
-Layout in `projects/ng/src/lib/controls`: each control has a folder named after it, holding `<name>.component.ts`, `<name>.component.html` and `<name>.component.spec.ts` (`text`, `text-box`, `text-area`, `numeric`, `select`, `grid`). Code that more than one control uses stays directly in `controls/`: `sources.ts`, `text-control-base.ts` and `test-kit.ts`. Styles stay inline in the component.
+Layout in `projects/ng/src/lib/controls`: each control has a folder named after it, holding `<name>.component.ts`, `<name>.component.html` and `<name>.component.spec.ts` (`text`, `text-box`, `text-area`, `numeric`, `select`, `date`, `checkbox`, `switch`, `password`, `grid`). Code that more than one control uses stays directly in `controls/`: `sources.ts`, `text-control-base.ts` and `test-kit.ts`. Styles stay inline in the component.
 
 Specs share `controls/test-kit.ts` (jsdom stubs for `ResizeObserver` and `matchMedia`, `render`, `type`, envelope helpers); `tsconfig.lib.json` leaves it out of the package. `projects/ng/vitest.config.mts` limits Vitest to two workers: with more, a busy machine failed with `Timeout starting forks runner` even though every test passed.
 
 
-Further controls (`s-date`, `s-checkbox`, `s-switch`, `s-password`, and the rest) use the same selector and accessor pattern. Do not rename a control to match the ng-zorro tag.
+Further controls use the same selector and accessor pattern. Do not rename a control to match the ng-zorro tag.
 
 ## Notes
 

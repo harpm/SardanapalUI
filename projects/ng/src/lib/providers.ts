@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { SardanapalDirectionService, SardanapalHttpClient } from '@sardanapal/client';
 import { SardanapalAuthService } from '@sardanapal/identity-client';
+import { provideNzNativeDateAdapter } from 'ng-zorro-antd/core/time';
 import { SardanapalNgDirectionBridge } from './direction-bridge';
 import { SardanapalNgErrorToasts } from './error-toasts';
 import type { SardanapalNgOptions } from './options';
@@ -40,6 +41,7 @@ export class SardanapalNg {
       { provide: SARDANAPAL_HTTP_CLIENT, useFactory: SardanapalNg.createHttpClient },
       { provide: SARDANAPAL_AUTH_SERVICE, useFactory: SardanapalNg.createAuthService },
       { provide: SARDANAPAL_DIRECTION_SERVICE, useFactory: SardanapalNg.createDirectionService },
+      provideNzNativeDateAdapter(),
       provideEnvironmentInitializer(() => SardanapalNg.start()),
     ]);
   }

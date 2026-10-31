@@ -1,0 +1,13 @@
+<nz-date-picker
+  [ngModel]="value()"
+  (ngModelChange)="updateValue($event)"
+  [nzDisabled]="disabled()"
+  [nzPlaceHolder]="placeholder"
+  [nzFormat]="format"
+  [nzShowTime]="showTime"
+  [nzAllowClear]="allowClear"
+  [nzInputReadOnly]="readonly"
+  [nzSize]="size"
+  [nzDisabledDate]="disabledDate ?? undefined"
+  (nzOnOpenChange)="onOpenChange($event)"
+/>

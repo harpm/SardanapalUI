@@ -5,10 +5,14 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { of } from 'rxjs';
 import {
   SARDANAPAL_DIRECTION_SERVICE,
+  SardanapalCheckboxComponent,
+  SardanapalDateComponent,
   SardanapalGridComponent,
   SardanapalNgLocaleService,
   SardanapalNumericComponent,
+  SardanapalPasswordComponent,
   SardanapalSelectComponent,
+  SardanapalSwitchComponent,
   SardanapalTextAreaComponent,
   SardanapalTextBoxComponent,
   SardanapalTextComponent,
@@ -60,9 +64,13 @@ class DemoPeople {
     SardanapalTextAreaComponent,
     SardanapalNumericComponent,
     SardanapalSelectComponent,
+    SardanapalDateComponent,
+    SardanapalCheckboxComponent,
+    SardanapalSwitchComponent,
+    SardanapalPasswordComponent,
     SardanapalGridComponent,
   ],
-  styles: [':host { display: block; max-width: 640px; margin: 24px auto; } s-text-box, s-text-area, s-numeric, s-select { margin-bottom: 12px; }'],
+  styles: [':host { display: block; max-width: 640px; margin: 24px auto; } s-text-box, s-text-area, s-numeric, s-select, s-date, s-password { margin-bottom: 12px; } s-checkbox, s-switch { margin-right: 16px; }'],
   template: `
     <h1>Sardanapal UI demo</h1>
     <p>Culture: {{ locale.culture() }}</p>
@@ -74,6 +82,10 @@ class DemoPeople {
     <s-text-area [formControl]="notes" placeholder="Notes" />
     <s-numeric [formControl]="age" [min]="0" [max]="120" placeholder="Age" />
     <s-select [formControl]="role" [options]="roles" placeholder="Role" />
+    <s-date [formControl]="born" placeholder="Born" />
+    <s-password [formControl]="secret" placeholder="Password" />
+    <s-checkbox [formControl]="agree" label="I agree" />
+    <s-switch [formControl]="active" checkedText="On" uncheckedText="Off" />
     <p>Name: <s-text [value]="name.value" emptyText="(empty)" /> | Age: <s-text [value]="age.value" emptyText="(empty)" /></p>
 
     <h2>Grid</h2>
@@ -88,6 +100,10 @@ export class AppComponent {
   protected readonly notes = new FormControl('');
   protected readonly age = new FormControl<number | null>(null);
   protected readonly role = new FormControl<number | null>(null);
+  protected readonly born = new FormControl<Date | null>(null);
+  protected readonly secret = new FormControl('');
+  protected readonly agree = new FormControl(false);
+  protected readonly active = new FormControl(true);
   protected readonly roles: SelectOption<number>[] = [
     { key: 1, value: 'Admin' },
     { key: 2, value: 'Editor' },

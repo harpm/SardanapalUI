@@ -1,0 +1,8 @@
+<nz-switch
+  [ngModel]="value() === true"
+  (ngModelChange)="onToggle($event)"
+  [nzDisabled]="disabled()"
+  [nzSize]="size"
+  [nzCheckedChildren]="checkedText"
+  [nzUnCheckedChildren]="uncheckedText"
+/>

@@ -16,6 +16,10 @@ export { SardanapalTextBoxComponent } from './lib/controls/text-box/text-box.com
 export { SardanapalTextAreaComponent } from './lib/controls/text-area/text-area.component';
 export { SardanapalNumericComponent } from './lib/controls/numeric/numeric.component';
 export { SardanapalSelectComponent } from './lib/controls/select/select.component';
+export { SardanapalDateComponent } from './lib/controls/date/date.component';
+export { SardanapalCheckboxComponent } from './lib/controls/checkbox/checkbox.component';
+export { SardanapalSwitchComponent } from './lib/controls/switch/switch.component';
+export { SardanapalPasswordComponent } from './lib/controls/password/password.component';
 export { SardanapalGridComponent } from './lib/controls/grid/grid.component';
 export type { SardanapalGridColumn } from './lib/controls/grid/grid.component';
 export type { SardanapalDictionarySource, SardanapalGridSource } from './lib/controls/sources';

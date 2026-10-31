@@ -2,7 +2,7 @@ import { booleanAttribute, Directive, Input } from '@angular/core';
 import { SardanapalControlBase } from '../control-base';
 
 /**
- * Shared inputs of the text controls (`s-text-box`, `s-text-area`). An emptied
+ * Shared inputs of the text controls (`s-text-box`, `s-text-area`, `s-password`). An emptied
  * control gives `''`, as a native input does, so `Validators.required` works.
  */
 @Directive()

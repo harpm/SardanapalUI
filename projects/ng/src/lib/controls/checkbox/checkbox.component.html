@@ -1,0 +1,9 @@
+<label
+  nz-checkbox
+  [ngModel]="value() === true"
+  (ngModelChange)="onToggle($event)"
+  [nzDisabled]="disabled()"
+  [nzIndeterminate]="indeterminate"
+>
+  {{ label }}
+</label>

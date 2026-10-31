@@ -24,7 +24,7 @@ export interface GridSearchModel<
   columns?: string[] | null;
   /** Keyset cursor when sorting by `Id`. */
   lastIdentifier?: TKey;
-  /** Present on the server model and unused. */
+  /** Typed filter. `s-select` sends this with `$getDictionary`. */
   dynamicField?: string;
 }
 

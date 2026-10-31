@@ -1,0 +1,18 @@
+<nz-select
+  [ngModel]="value()"
+  (ngModelChange)="updateValue($event)"
+  [disabled]="disabled()"
+  [nzMode]="multiple ? 'multiple' : 'default'"
+  [nzPlaceHolder]="placeholder"
+  [nzAllowClear]="allowClear"
+  [nzSize]="size"
+  [nzLoading]="loading()"
+  [nzServerSearch]="serverSearch()"
+  nzShowSearch
+  (nzOnSearch)="onSearch($event)"
+  (nzBlur)="markTouched()"
+>
+  @for (option of items(); track option.key) {
+    <nz-option [nzValue]="option.key" [nzLabel]="label(option)" />
+  }
+</nz-select>

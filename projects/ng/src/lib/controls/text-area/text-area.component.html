@@ -1,0 +1,14 @@
+<textarea
+  #box
+  nz-input
+  [rows]="rows"
+  [placeholder]="placeholder"
+  [value]="value() ?? ''"
+  [disabled]="disabled()"
+  [readonly]="readonly"
+  [nzSize]="size"
+  [nzStatus]="status"
+  [attr.maxlength]="maxLength"
+  (input)="updateValue(box.value)"
+  (blur)="markTouched()"
+></textarea>

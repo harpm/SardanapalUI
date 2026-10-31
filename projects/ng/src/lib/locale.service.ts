@@ -10,10 +10,9 @@ import { en_US, fa_IR, NzI18nService, type NzI18nInterface } from 'ng-zorro-antd
 export class SardanapalNgLocaleService {
   private readonly i18n = inject(NzI18nService);
   private readonly document = inject(DOCUMENT);
-  private readonly cultureSignal = signal('en');
 
   /** The current culture name, for example `en` or `fa-IR`. */
-  readonly culture = this.cultureSignal.asReadonly();
+  readonly culture = signal('en');
 
   /** `fa` and `fa-IR` use the ng-zorro `fa_IR` locale, every other culture `en_US`. */
   static localeOf(culture: string): NzI18nInterface {
@@ -28,6 +27,6 @@ export class SardanapalNgLocaleService {
     }
     this.i18n.setLocale(SardanapalNgLocaleService.localeOf(value));
     this.document.documentElement.lang = value;
-    this.cultureSignal.set(value);
+    this.culture.set(value);
   }
 }

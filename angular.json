@@ -28,7 +28,8 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/ng/tsconfig.spec.json"
+            "tsConfig": "projects/ng/tsconfig.spec.json",
+            "runnerConfig": "projects/ng/vitest.config.mts"
           }
         }
       }
@@ -55,8 +56,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1MB",
-                  "maximumError": "2MB"
+                  "maximumWarning": "2MB",
+                  "maximumError": "3MB"
                 }
               ],
               "outputHashing": "all"

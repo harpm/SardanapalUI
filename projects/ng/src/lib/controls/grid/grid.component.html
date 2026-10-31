@@ -1,0 +1,40 @@
+<nz-table
+  #table
+  [nzData]="rows()"
+  [nzFrontPagination]="false"
+  [nzLoading]="loading()"
+  [nzTotal]="total()"
+  [nzPageIndex]="pageIndex() + 1"
+  [nzPageSize]="currentPageSize()"
+  [nzPageSizeOptions]="pageSizeOptions"
+  [nzShowSizeChanger]="showSizeChanger"
+  [nzSize]="size"
+  (nzPageIndexChange)="onPageIndex($event)"
+  (nzPageSizeChange)="onPageSize($event)"
+>
+  <thead>
+    <tr>
+      @for (column of columns; track column.field) {
+        <th
+          [nzColumnKey]="column.field"
+          [nzShowSort]="column.sortable === true"
+          [nzSortOrder]="sortOrderOf(column)"
+          [nzWidth]="column.width ?? null"
+          [nzAlign]="column.align ?? null"
+          (nzSortOrderChange)="onSort(column, $event)"
+        >
+          {{ column.title }}
+        </th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (row of table.data; track keyOf(row, $index)) {
+      <tr>
+        @for (column of columns; track column.field) {
+          <td [nzAlign]="column.align ?? null">{{ cellText(row, column) }}</td>
+        }
+      </tr>
+    }
+  </tbody>
+</nz-table>

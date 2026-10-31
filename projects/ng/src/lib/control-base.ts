@@ -19,7 +19,7 @@ export abstract class SardanapalControlBase<T> implements ControlValueAccessor {
   private onChange: (value: T | null) => void = () => undefined;
   private onTouched: () => void = () => undefined;
 
-  protected constructor() {
+  constructor() {
     const ngControl = inject(NgControl, { self: true, optional: true });
     if (ngControl) {
       ngControl.valueAccessor = this;

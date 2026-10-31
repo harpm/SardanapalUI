@@ -1,0 +1,13 @@
+<nz-input-number
+  [ngModel]="value()"
+  (ngModelChange)="updateValue($event)"
+  [disabled]="disabled()"
+  [nzReadOnly]="readonly"
+  [nzMin]="min ?? unbounded.min"
+  [nzMax]="max ?? unbounded.max"
+  [nzStep]="step"
+  [nzPrecision]="precision"
+  [nzPlaceHolder]="placeholder"
+  [nzSize]="size"
+  (nzBlur)="markTouched()"
+/>

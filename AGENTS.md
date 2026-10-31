@@ -238,7 +238,7 @@ Panel is CRUD plus. `SardanapalPanelClient` extends `SardanapalCrudClient` and t
 - `totalCount` — filled by the server
 - `columns` — optional property names to project
 - `lastIdentifier` — keyset cursor when sorting by `Id`
-- `dynamicField` — present on the server model and unused
+- `dynamicField` — `s-select` sends the typed filter here when it loads a dictionary
 
 ### Direction
 
@@ -266,7 +266,7 @@ export const appConfig: ApplicationConfig = {
 | --- | --- |
 | `SardanapalNgDirectionBridge` | Starts with the providers. Keeps the CDK `Directionality` in step with `directionChanged$`. |
 | `SardanapalNgErrorToasts` | Starts with the providers unless `errorToasts` is `false`. Shows each failed request once as an ng-zorro message: the envelope `userMessage` when the error body has one, else the error message. A 2xx failure envelope is not shown (the caller shows `userMessage`). A password-change 403 is skipped: send the user to change-password instead. |
-| `SardanapalNgLocaleService` | `setCulture(culture)` sets the ng-zorro locale (`fa*` is `fa_IR`, everything else `en_US`) and `lang` on the page. It never touches direction. |
+| `SardanapalNgLocaleService` | `setCulture(culture)` sets the ng-zorro locale (`fa*` is `fa_IR`, everything else `en_US`) and `lang` on the page. `culture()` is a signal. It never touches direction. |
 | `SardanapalControlBase<T>` | Base of every editing control. Implements `ControlValueAccessor` once and registers itself with its own `NgControl`, so a control needs no `NG_VALUE_ACCESSOR` provider. A subclass reads `value()` and `disabled()`, calls `updateValue` on input and `markTouched` on blur. |
 
 Language and direction stay separate. Whoever changes the language calls `SardanapalNgLocaleService.setCulture` and `SardanapalDirectionService.setDirection` (the demo app does both).
@@ -284,6 +284,20 @@ Selectors are `s-<kebab-name>`. An editing control implements `ControlValueAcces
 | `s-numeric`   | `nz-input-number`     | Number                             |
 | `s-select`    | `nz-select`           | Static options, or `getDictionary` |
 | `s-grid`      | `nz-table`            | Page and sort through `getAll`     |
+
+Inputs and behavior:
+
+- `s-text`: `value` (any), `emptyText`, `type` (`secondary`, `warning`, `danger`, `success`). Null and undefined show `emptyText`; a `Date` uses the local format.
+- `s-text-box`, `s-text-area`: `placeholder`, `readonly`, `maxLength`, `size`, `status`, and `rows` on the area. They share `SardanapalTextControlBase`. An emptied control gives `''`, as a native input does, so `Validators.required` works.
+- `s-numeric`: `min`, `max`, `step`, `precision`, `placeholder`, `readonly`, `size`. An emptied control gives `null`.
+- `s-select`: the value is a key, or an array of keys with `multiple`. Options come from `options` (`{ key, value }`, `value` is the label) or from `dictionary`, a panel client. With `dictionary` it loads one page (`dictionaryPageSize`) when it is created and whenever `dictionary` or `dictionaryFields` changes, and it sends the typed text, after 300 ms, as `dynamicField`. `dictionaryFields` is sent as `fields`. A failed load leaves the list empty; the error is already on the shared channel.
+- `s-grid`: `client` (a CRUD or panel client), `columns` (`SardanapalGridColumn`: `field` with dotted paths, `title`, `sortable`, `width`, `align`, `format`), `searchFields`, `pageSize`, `pageSizeOptions`, `showSizeChanger`, `size`, `rowKey`, `sortId`, `sortAscending`; output `loaded`; method `reload()`. It loads when created and returns to the first page when `client`, `searchFields` or `pageSize` changes (pass a new `searchFields` object to search again). Sorting and paging go to the host. A failure envelope shows its `userMessage`; the Excel export is not part of the grid.
+
+Inputs and outputs use the `@Input()` and `@Output()` decorators, not the signal `input()` and `output()` functions. A control that must react to an input change does it in `ngOnChanges`. Internal state (`value`, `disabled`, loaded rows, loading) stays in `signal()`.
+
+Layout in `projects/ng/src/lib/controls`: each control has a folder named after it, holding `<name>.component.ts`, `<name>.component.html` and `<name>.component.spec.ts` (`text`, `text-box`, `text-area`, `numeric`, `select`, `grid`). Code that more than one control uses stays directly in `controls/`: `sources.ts`, `text-control-base.ts` and `test-kit.ts`. Styles stay inline in the component.
+
+Specs share `controls/test-kit.ts` (jsdom stubs for `ResizeObserver` and `matchMedia`, `render`, `type`, envelope helpers); `tsconfig.lib.json` leaves it out of the package. `projects/ng/vitest.config.mts` limits Vitest to two workers: with more, a busy machine failed with `Timeout starting forks runner` even though every test passed.
 
 
 Further controls (`s-date`, `s-checkbox`, `s-switch`, `s-password`, and the rest) use the same selector and accessor pattern. Do not rename a control to match the ng-zorro tag.

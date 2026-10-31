@@ -20,7 +20,7 @@ export interface PanelEndpointMap extends CrudEndpointMap {
 export const defaultPanelEndpoints: PanelEndpointMap = {
   ...defaultCrudEndpoints,
   getDictionary: '{resource}/dictionary',
-  getExcel: '{resource}/excel',
+  getExcel: '{resource}/excel', // not get-excel; override with endpoints.getExcel
 };
 
 export type SardanapalPanelClientOptions = SardanapalCrudClientOptions<PanelEndpointMap>;

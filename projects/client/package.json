@@ -2,6 +2,8 @@
   "name": "@sardanapal/client",
   "version": "0.0.0",
   "private": true,
+  "description": "HTTP client, envelope, direction, CRUD and panel calls for Sardanapal Core hosts.",
+  "files": ["dist"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

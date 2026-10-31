@@ -2,6 +2,7 @@
   "name": "@sardanapal/ng",
   "version": "0.0.0",
   "private": true,
+  "description": "Angular 22 s-* controls and providers for Sardanapal hosts.",
   "peerDependencies": {
     "@angular/cdk": "^22.0.0",
     "@angular/common": "^22.0.0",

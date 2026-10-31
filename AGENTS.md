@@ -127,7 +127,7 @@ POST {apiBaseUrl}/account/request-reset-password
 POST {apiBaseUrl}/account/reset-password
 ```
 
-`get-excel` returns file bytes, not the JSON envelope.
+`$getExcel` (`POST {resource}/excel`) returns file bytes, not the JSON envelope. The default path is `excel`, not `get-excel`. Override it with `endpoints.getExcel` if the host uses another route.
 
 ## Services
 
@@ -315,4 +315,13 @@ Further controls use the same selector and accessor pattern. Do not rename a con
 - User-facing strings on `userMessage` are already localized by the host. The 403 password-change body from the Identity authorize filter is a hardcoded English message, not the envelope.
 - `pageIndex` is zero-based. `pageSize` `0` means unpaged.
 - Branch that matches the sibling repos is `master`.
+
+## Packaging
+
+The three packages stay **private** (`private: true`, version `0.0.0`). Do not publish them to npmjs or to the private feed until the user asks. A host in this repo uses the npm workspaces. A host in another repo can:
+
+1. `npm run build` here, then depend on the built folders with `file:` (`projects/client`, `projects/identity-client`, `dist/ng`), or
+2. `npm pack` those folders and install the tarballs.
+
+`@sardanapal/client` and `@sardanapal/identity-client` publish from their `dist` (`files: ["dist"]`). `@sardanapal/ng` is the ng-packagr output in `dist/ng`. When a feed is chosen later, drop `private`, set a real version, and publish those three folders only — never the demo app.
 

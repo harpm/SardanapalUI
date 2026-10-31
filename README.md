@@ -1,48 +1,80 @@
-# Sardanapal UI - Components for Sardanapal Apps
+# Sardanapal UI
 
-## Overview
+Component library for apps that host the Sardanapal Core and Sardanapal Identity service bases. Core and Identity stay .NET class libraries. A host app exposes those bases over HTTP; this library calls that host. It never references the .NET assemblies.
 
-Sardanapal UI is the component library for applications that host the Sardanapal Core and Sardanapal Identity service bases. Core and Identity stay class libraries. A host app exposes those bases over HTTP, and this library calls that host.
-
-The library is split so the non-visual client can be used from any UI framework, while the controls are Angular components built on ng-zorro.
-
-## Features
-
-- **Auth**: caches the security token and refreshes it automatically.
-- **Direction**: switches layout for English (`ltr`) and Persian (`rtl`).
-- **CRUD and panel clients**: call the same operations the Core service bases provide (`$get`, `$getAll`, `$add`, `$getEditable`, `$edit`, `$delete`, `$getDictionary`, `$getExcel`). `SardanapalCrudClient` and `SardanapalPanelClient` return RxJS observables of the typed response body, with a configurable route per resource. A failed request is reported once, as a `SardanapalHttpError` carrying `resource` and `operation`, on the HTTP client's `httpError$`.
-- **Controls**: ready-made inputs and a grid, with the selector `s-<component-name>`.
-
-```ts
-import { SardanapalHttpClient, SardanapalPanelClient } from '@sardanapal/client';
-
-const client = new SardanapalHttpClient({ apiBaseUrl: 'https://host/api' });
-const orders = new SardanapalPanelClient({ client, resource: 'orders' });
-
-orders.$getAll({ pageIndex: 0, pageSize: 25 }).subscribe((result) => {
-  if (result.isSuccess) console.log(result.data?.list);
-});
-```
+The non-visual clients work from any UI framework. The `s-*` controls are Angular 22 components on ng-zorro-antd 22.
 
 ## Packages
 
 | Package | What it is |
-|---|---|
-| `@sardanapal/client` | Core side: HTTP transport, response envelope, storage adapters, direction, CRUD, and panel calls. Any UI framework can use it. |
-| `@sardanapal/identity-client` | Identity side: login, token cache, automatic refresh, and JWT claims. Depends on `@sardanapal/client`. Any UI framework can use it. |
-| `@sardanapal/ng` | Angular components. The `s-*` controls live here and are Angular-only. |
+| --- | --- |
+| `@sardanapal/client` | HTTP transport, `IResponse<T>` envelope, storage, direction, CRUD, and panel (`$getDictionary`, `$getExcel`). |
+| `@sardanapal/identity-client` | Login, token cache, refresh, JWT claims, account, and OTP. Depends on `@sardanapal/client`. |
+| `@sardanapal/ng` | Angular providers and the `s-*` controls. Depends on both clients. |
 
-### First controls
+The packages are **not published**. They stay `private` at version `0.0.0`. Use them from this workspace, or after `npm run build` point another repo at the built folders with `file:` (`projects/client`, `projects/identity-client`, `dist/ng`). Do not publish to npmjs or to a private feed until that is asked for.
 
-- `s-text`
-- `s-text-box`
-- `s-text-area`
-- `s-numeric`
-- `s-select`
-- `s-grid`
+## Commands
 
-## Installation
+```bash
+npm install          # see AGENTS.md Toolchain if the registry or Node version fights back
+npm test
+npm run build
+npm start            # builds the clients, then serves the demo
+```
 
-The packages are not published yet. Once the library is built, install them as npm packages and point the client at the host app that exposes the Core and Identity service bases.
+## Clients
 
-### Thanks for your attention
+```ts
+import { SardanapalHttpClient, SardanapalPanelClient } from '@sardanapal/client';
+import { SardanapalAuthService } from '@sardanapal/identity-client';
+
+const http = new SardanapalHttpClient({ apiBaseUrl: 'https://host/api' });
+const auth = new SardanapalAuthService({ client: http });
+const orders = new SardanapalPanelClient({ client: http, resource: 'orders' });
+
+orders.$getAll({ pageIndex: 0, pageSize: 25 }).subscribe((result) => {
+  if (result.isSuccess) {
+    console.log(result.data?.list);
+  }
+});
+```
+
+The auth header is `AUTH` with the raw JWT. A failed request is reported once on `http.httpError$` as a `SardanapalHttpError`. A 2xx body with a non-zero `statusCode` is returned, not thrown — show `userMessage`.
+
+`$getExcel` posts to `{resource}/excel` (not `get-excel`) and returns file bytes. Override the path with `endpoints.getExcel` if the host uses another route.
+
+## Angular
+
+Register the bridge once. It shares one HTTP client, auth, and direction service, starts error toasts, and provides ng-zorro's native date adapter for `s-date`.
+
+```ts
+import { SardanapalNg } from '@sardanapal/ng';
+
+export const appConfig: ApplicationConfig = {
+  providers: [SardanapalNg.providers({ apiBaseUrl: 'https://host/api' })],
+};
+```
+
+Build CRUD, panel, and account clients with `client: inject(SARDANAPAL_HTTP_CLIENT)` or `auth: inject(SARDANAPAL_AUTH_SERVICE)` so calls carry the `AUTH` header.
+
+Language and direction are separate. Call both `SardanapalNgLocaleService.setCulture` and `SardanapalDirectionService.setDirection` when the user switches language (the demo app does this).
+
+### Controls
+
+Selectors are `s-<name>`. Editing controls implement `ControlValueAccessor` (`ngModel`, `formControl`, `formControlName`).
+
+| Selector | Role |
+| --- | --- |
+| `s-text` | Display-only text |
+| `s-text-box` | Single-line text |
+| `s-text-area` | Multi-line text |
+| `s-numeric` | Number |
+| `s-select` | Static options, or a panel `$getDictionary` (typed text goes in `dynamicField`) |
+| `s-date` | Date, optional time |
+| `s-checkbox` | Boolean |
+| `s-switch` | Boolean |
+| `s-password` | Secret text |
+| `s-grid` | Page and sort through `$getAll` |
+
+Inputs and outputs use `@Input()` / `@Output()`. Internal state uses `signal()`. Each control lives in `projects/ng/src/lib/controls/<name>/`. Details and the wire protocol are in [AGENTS.md](AGENTS.md).

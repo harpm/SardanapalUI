@@ -2,6 +2,8 @@
   "name": "@sardanapal/identity-client",
   "version": "0.0.0",
   "private": true,
+  "description": "Auth, JWT claims, account and OTP clients for Sardanapal Identity hosts.",
+  "files": ["dist"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -11,6 +11,8 @@ permissions:
 jobs:
   build_and_publish:
     runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUBTOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +21,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: "@harpm"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -27,5 +31,3 @@ jobs:
 
       - name: Running Build Script
         run: go run SDBuild.go
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUBTOKEN }}

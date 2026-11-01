@@ -4,7 +4,7 @@ import {
   SardanapalDirectionService,
   type DirectionTarget,
   type TextDirection,
-} from './index';
+} from '../index';
 
 class FakeTarget implements DirectionTarget {
   readonly documentElement = { dir: '' };

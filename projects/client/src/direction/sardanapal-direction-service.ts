@@ -1,5 +1,5 @@
 import { Subject, type Observable } from 'rxjs';
-import { MemoryStorage, type KeyValueStorage } from './storage';
+import { MemoryStorage, type KeyValueStorage } from '../storage/storage';
 
 export type TextDirection = 'ltr' | 'rtl';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SardanapalErrorChannel, SardanapalHttpError } from './index';
+import { SardanapalErrorChannel, SardanapalHttpError } from '../index';
 
 describe('error channel', () => {
   it('publishes a reported error and returns the same instance', () => {

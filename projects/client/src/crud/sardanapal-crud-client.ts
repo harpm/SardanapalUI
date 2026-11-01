@@ -1,14 +1,14 @@
 import type { Observable } from "rxjs";
 import type { AxiosRequestConfig } from "axios";
-import type { ClientOperation } from "./errors";
-import type { SardanapalHttpClient } from "./http";
+import type { ClientOperation } from "../errors/sardanapal-http-error";
+import type { SardanapalHttpClient } from "../http/sardanapal-http-client";
 import {
   GridSearchModelFactory,
   type EntityKey,
   type GridResult,
   type GridSearchModel,
-} from "./grid";
-import type { IResponse } from "./response";
+} from "../grid/grid";
+import type { IResponse } from "../response/response";
 
 /**
  * Path templates, one per CRUD method. Placeholders:

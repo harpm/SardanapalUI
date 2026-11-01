@@ -10,7 +10,7 @@ import {
   StatusCode,
   BrowserStorageAdapter,
   MemoryStorage,
-} from './index';
+} from '../index';
 
 const baseUrl = 'http://localhost:5000';
 

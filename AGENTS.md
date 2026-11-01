@@ -37,6 +37,8 @@ Three packages. Do not fold the HTTP client into the Angular library. Core and I
 | `@sardanapal/ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on both clients. |
 
 
+Layout in `projects/client/src`: each service has a folder named after it, holding the class file (`http/sardanapal-http-client.ts`, `crud/sardanapal-crud-client.ts`, `panel/sardanapal-panel-client.ts`, `direction/sardanapal-direction-service.ts`). Supporting types stay in their own folders (`errors`, `storage`, `response`, `grid`).
+
 `ng-zorro-antd` is Angular-only (forms, CDK, dependency injection). The `s-*` components stay in `@sardanapal/ng`. A later React or Vue package would wrap `@sardanapal/client` and would not reuse the Angular templates. Do not compile the controls to Angular Elements: that ships the Angular runtime into every host and breaks `ngModel` and reactive forms.
 
 Keep ng-zorro. It covers the first controls, ships a `fa_IR` locale, and flips layout when `dir="rtl"` is set on `html` (CDK bidi plus `NzConfigService`). `s-grid` talks to panel search through its own inputs, with `nz-table` behind that API, so the table widget can be replaced later without renaming the component.

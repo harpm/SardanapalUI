@@ -7,7 +7,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import { defer, from, map, type Observable } from 'rxjs';
-import { SardanapalErrorChannel, SardanapalHttpError } from './errors';
+import { SardanapalErrorChannel, SardanapalHttpError } from '../errors/sardanapal-http-error';
 
 /**
  * Hook into every request and response of a `SardanapalHttpClient`.

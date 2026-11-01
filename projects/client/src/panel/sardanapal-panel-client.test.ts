@@ -7,7 +7,7 @@ import {
   SardanapalHttpError,
   SardanapalPanelClient,
   StatusCode,
-} from './index';
+} from '../index';
 
 const baseUrl = 'http://localhost:5000';
 

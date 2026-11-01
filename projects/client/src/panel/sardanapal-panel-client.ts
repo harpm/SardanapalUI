@@ -4,9 +4,9 @@ import {
   defaultCrudEndpoints,
   type CrudEndpointMap,
   type SardanapalCrudClientOptions,
-} from './crud';
-import { GridSearchModelFactory, type EntityKey, type GridResult, type GridSearchModel, type SelectOption } from './grid';
-import type { IResponse } from './response';
+} from '../crud/sardanapal-crud-client';
+import { GridSearchModelFactory, type EntityKey, type GridResult, type GridSearchModel, type SelectOption } from '../grid/grid';
+import type { IResponse } from '../response/response';
 
 /**
  * CRUD templates plus the two panel methods. Both panel calls are `POST`.

@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import type { SelectOption } from '@sardanapal/client';
+import type { SelectOption } from '@harpm/sardanapal-client';
 import { NzOptionComponent, NzSelectComponent } from 'ng-zorro-antd/select';
 import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

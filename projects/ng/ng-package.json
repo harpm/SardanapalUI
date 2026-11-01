@@ -1,7 +1,7 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/ng",
-  "allowedNonPeerDependencies": ["@sardanapal/client", "@sardanapal/identity-client"],
+  "allowedNonPeerDependencies": ["@harpm/sardanapal-client", "@harpm/sardanapal-identity-client"],
   "lib": {
     "entryFile": "src/public-api.ts"
   }

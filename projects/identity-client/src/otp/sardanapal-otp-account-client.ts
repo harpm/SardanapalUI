@@ -1,4 +1,4 @@
-import { StatusCode, type EntityKey, type IResponse } from '@sardanapal/client';
+import { StatusCode, type EntityKey, type IResponse } from '@harpm/sardanapal-client';
 import { tap, type Observable } from 'rxjs';
 import {
   SardanapalAccountClient,

@@ -1,7 +1,7 @@
 import { Component, signal, ViewChild } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import type { GridResult } from '@sardanapal/client';
+import type { GridResult } from '@harpm/sardanapal-client';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzTableComponent, NzThAddOnComponent } from 'ng-zorro-antd/table';
 import { of, throwError } from 'rxjs';

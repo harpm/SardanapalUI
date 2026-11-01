@@ -1,8 +1,11 @@
 {
-  "name": "@sardanapal/identity-client",
+  "name": "@harpm/sardanapal-identity-client",
   "version": "0.0.0",
-  "private": true,
   "description": "Auth, JWT claims, account and OTP clients for Sardanapal Identity hosts.",
+  "repository": "https://github.com/harpm/SardanapalUI.git",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "files": ["dist"],
   "type": "module",
   "main": "./dist/index.js",
@@ -22,7 +25,7 @@
     "vitest": "^4.0.8"
   },
   "dependencies": {
-    "@sardanapal/client": "0.0.0",
+    "@harpm/sardanapal-client": "0.0.0",
     "axios": "^1.20.0",
     "jwt-decode": "^4.0.0",
     "rxjs": "^7.8.0"

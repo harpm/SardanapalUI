@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { GridSearchModelFactory, Response, type GridResult, type SelectOption } from '@sardanapal/client';
+import { GridSearchModelFactory, Response, type GridResult, type SelectOption } from '@harpm/sardanapal-client';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { of } from 'rxjs';
 import {
@@ -18,7 +18,7 @@ import {
   SardanapalTextComponent,
   type SardanapalGridColumn,
   type SardanapalGridSource,
-} from '@sardanapal/ng';
+} from '@harpm/sardanapal-ng';
 
 interface Person {
   id: number;

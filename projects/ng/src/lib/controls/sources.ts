@@ -1,4 +1,4 @@
-import type { SardanapalCrudClient, SardanapalPanelClient } from '@sardanapal/client';
+import type { SardanapalCrudClient, SardanapalPanelClient } from '@harpm/sardanapal-client';
 
 /**
  * Anything that has `$getDictionary`: a `SardanapalPanelClient` for any resource.

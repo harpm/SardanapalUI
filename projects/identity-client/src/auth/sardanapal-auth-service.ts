@@ -12,7 +12,7 @@ import {
   MemoryStorage,
   type IResponse,
   type KeyValueStorage,
-} from '@sardanapal/client';
+} from '@harpm/sardanapal-client';
 import {
   BehaviorSubject,
   defer,

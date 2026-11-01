@@ -1,0 +1,25 @@
+{
+	"version": "1.1.0",
+	"registry": "https://npm.pkg.github.com",
+	"install_registry": "https://registry.npmjs.org/",
+	"repository": "https://github.com/harpm/SardanapalUI.git",
+	"packages": [
+		{
+			"name": "@harpm/sardanapal-client",
+			"path": "projects/client",
+			"publish_path": "projects/client"
+		},
+		{
+			"name": "@harpm/sardanapal-identity-client",
+			"path": "projects/identity-client",
+			"publish_path": "projects/identity-client",
+			"depends_on": ["@harpm/sardanapal-client"]
+		},
+		{
+			"name": "@harpm/sardanapal-ng",
+			"path": "projects/ng",
+			"publish_path": "dist/ng",
+			"depends_on": ["@harpm/sardanapal-client", "@harpm/sardanapal-identity-client"]
+		}
+	]
+}

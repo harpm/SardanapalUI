@@ -4,8 +4,8 @@ import {
   provideEnvironmentInitializer,
   type EnvironmentProviders,
 } from '@angular/core';
-import { SardanapalDirectionService, SardanapalHttpClient } from '@sardanapal/client';
-import { SardanapalAuthService } from '@sardanapal/identity-client';
+import { SardanapalDirectionService, SardanapalHttpClient } from '@harpm/sardanapal-client';
+import { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 import { provideNzNativeDateAdapter } from 'ng-zorro-antd/core/time';
 import { SardanapalNgDirectionBridge } from './direction-bridge';
 import { SardanapalNgErrorToasts } from './error-toasts';

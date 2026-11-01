@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { Response, type GridResult, type IResponse } from '@sardanapal/client';
+import { Response, type GridResult, type IResponse } from '@harpm/sardanapal-client';
 
 /** Helpers for the control specs. Not part of the package: `tsconfig.lib.json` leaves it out. */
 export class ControlTestKit {

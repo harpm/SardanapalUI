@@ -16,7 +16,7 @@ import {
   StatusCode,
   type GridResult,
   type IResponse,
-} from '@sardanapal/client';
+} from '@harpm/sardanapal-client';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzTableModule, type NzTableSortOrder } from 'ng-zorro-antd/table';
 import { catchError, finalize, map, of, Subject, switchMap, tap, type Observable } from 'rxjs';

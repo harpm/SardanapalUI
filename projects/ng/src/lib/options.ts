@@ -1,8 +1,8 @@
 import type {
   SardanapalDirectionServiceOptions,
   SardanapalHttpClientOptions,
-} from '@sardanapal/client';
-import type { SardanapalAuthServiceOptions } from '@sardanapal/identity-client';
+} from '@harpm/sardanapal-client';
+import type { SardanapalAuthServiceOptions } from '@harpm/sardanapal-identity-client';
 
 export interface SardanapalNgOptions {
   /** Base URL of the host app that exposes the Core and Identity service bases. */

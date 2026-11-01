@@ -15,7 +15,7 @@ import {
   StatusCode,
   type EntityKey,
   type SelectOption,
-} from '@sardanapal/client';
+} from '@harpm/sardanapal-client';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import {
   catchError,

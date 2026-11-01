@@ -5,7 +5,7 @@ import {
   SardanapalPanelClient,
   BrowserStorageAdapter,
   MemoryStorage,
-} from '@sardanapal/client';
+} from '@harpm/sardanapal-client';
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { SardanapalAuthService, SardanapalJwtService } from '../index';

@@ -1,4 +1,4 @@
-import type { EntityKey } from '@sardanapal/client';
+import type { EntityKey } from '@harpm/sardanapal-client';
 
 /** Mirrors `RegisterVM<byte>`. Property names are camelCase on the wire. */
 export interface RegisterModel {

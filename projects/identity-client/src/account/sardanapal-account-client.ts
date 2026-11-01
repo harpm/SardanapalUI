@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios';
-import type { EntityKey, IResponse } from '@sardanapal/client';
+import type { EntityKey, IResponse } from '@harpm/sardanapal-client';
 import type { Observable } from 'rxjs';
 import type { SardanapalAuthService } from '../auth/sardanapal-auth-service';
 import type {

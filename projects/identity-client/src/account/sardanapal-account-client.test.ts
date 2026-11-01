@@ -1,5 +1,5 @@
 import axios, { AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
-import { SardanapalHttpClient, SardanapalHttpError } from '@sardanapal/client';
+import { SardanapalHttpClient, SardanapalHttpError } from '@harpm/sardanapal-client';
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {

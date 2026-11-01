@@ -1,8 +1,11 @@
 {
-  "name": "@sardanapal/ng",
+  "name": "@harpm/sardanapal-ng",
   "version": "0.0.0",
-  "private": true,
   "description": "Angular 22 s-* controls and providers for Sardanapal hosts.",
+  "repository": "https://github.com/harpm/SardanapalUI.git",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "peerDependencies": {
     "@angular/cdk": "^22.0.0",
     "@angular/common": "^22.0.0",
@@ -12,8 +15,8 @@
     "rxjs": "^7.4.0"
   },
   "dependencies": {
-    "@sardanapal/client": "0.0.0",
-    "@sardanapal/identity-client": "0.0.0",
+    "@harpm/sardanapal-client": "0.0.0",
+    "@harpm/sardanapal-identity-client": "0.0.0",
     "tslib": "^2.8.1"
   },
   "sideEffects": false

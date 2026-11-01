@@ -1,8 +1,11 @@
 {
-  "name": "@sardanapal/client",
+  "name": "@harpm/sardanapal-client",
   "version": "0.0.0",
-  "private": true,
   "description": "HTTP client, envelope, direction, CRUD and panel calls for Sardanapal Core hosts.",
+  "repository": "https://github.com/harpm/SardanapalUI.git",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "files": ["dist"],
   "type": "module",
   "main": "./dist/index.js",

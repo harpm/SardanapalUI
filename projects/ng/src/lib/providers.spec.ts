@@ -4,8 +4,8 @@ import {
   SardanapalErrorChannel,
   SardanapalHttpClient,
   SardanapalHttpError,
-} from '@sardanapal/client';
-import { SardanapalAuthService } from '@sardanapal/identity-client';
+} from '@harpm/sardanapal-client';
+import { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzI18nService, en_US, fa_IR } from 'ng-zorro-antd/i18n';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

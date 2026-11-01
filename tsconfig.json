@@ -17,7 +17,7 @@
     "declaration": false,
     "lib": ["ES2022", "dom"],
     "paths": {
-      "@sardanapal/ng": ["./projects/ng/src/public-api.ts"]
+      "@harpm/sardanapal-ng": ["./projects/ng/src/public-api.ts"]
     }
   },
   "angularCompilerOptions": {

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Response, type SardanapalHttpError } from '@sardanapal/client';
+import { Response, type SardanapalHttpError } from '@harpm/sardanapal-client';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { SARDANAPAL_HTTP_CLIENT } from './tokens';
 

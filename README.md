@@ -8,11 +8,22 @@ The non-visual clients work from any UI framework. The `s-*` controls are Angula
 
 | Package | What it is |
 | --- | --- |
-| `@sardanapal/client` | HTTP transport, `IResponse<T>` envelope, storage, direction, CRUD, and panel (`$getDictionary`, `$getExcel`). |
-| `@sardanapal/identity-client` | Login, token cache, refresh, JWT claims, account, and OTP. Depends on `@sardanapal/client`. |
-| `@sardanapal/ng` | Angular providers and the `s-*` controls. Depends on both clients. |
+| `@harpm/sardanapal-client` | HTTP transport, `IResponse<T>` envelope, storage, direction, CRUD, and panel (`$getDictionary`, `$getExcel`). |
+| `@harpm/sardanapal-identity-client` | Login, token cache, refresh, JWT claims, account, and OTP. Depends on `@harpm/sardanapal-client`. |
+| `@harpm/sardanapal-ng` | Angular providers and the `s-*` controls. Depends on both clients. |
 
-The packages are **not published**. They stay `private` at version `0.0.0`. Use them from this workspace, or after `npm run build` point another repo at the built folders with `file:` (`projects/client`, `projects/identity-client`, `dist/ng`). Do not publish to npmjs or to a private feed until that is asked for.
+The packages publish to GitHub Packages (`https://npm.pkg.github.com`) as `@harpm/sardanapal-client`, `@harpm/sardanapal-identity-client`, and `@harpm/sardanapal-ng`. `Build.json` owns the version. A push to `master` builds, tests, and publishes.
+
+A host installs with a `read:packages` token and this `.npmrc`:
+
+```
+@harpm:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+```bash
+npm install @harpm/sardanapal-client @harpm/sardanapal-identity-client @harpm/sardanapal-ng
+```
 
 ## Commands
 
@@ -26,8 +37,8 @@ npm start            # builds the clients, then serves the demo
 ## Clients
 
 ```ts
-import { SardanapalHttpClient, SardanapalPanelClient } from '@sardanapal/client';
-import { SardanapalAuthService } from '@sardanapal/identity-client';
+import { SardanapalHttpClient, SardanapalPanelClient } from '@harpm/sardanapal-client';
+import { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 
 const http = new SardanapalHttpClient({ apiBaseUrl: 'https://host/api' });
 const auth = new SardanapalAuthService({ client: http });
@@ -49,7 +60,7 @@ The auth header is `AUTH` with the raw JWT. A failed request is reported once on
 Register the bridge once. It shares one HTTP client, auth, and direction service, starts error toasts, and provides ng-zorro's native date adapter for `s-date`.
 
 ```ts
-import { SardanapalNg } from '@sardanapal/ng';
+import { SardanapalNg } from '@harpm/sardanapal-ng';
 
 export const appConfig: ApplicationConfig = {
   providers: [SardanapalNg.providers({ apiBaseUrl: 'https://host/api' })],

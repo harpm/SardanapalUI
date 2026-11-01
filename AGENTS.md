@@ -18,10 +18,13 @@ The repo is on `master`. These three files exist first. The packages below are t
 AGENTS.md
 README.md
 .gitignore
+Build.json
+SDBuild.go
+.npmrc
 projects/
-  client/                  @sardanapal/client            plain TypeScript, no Angular (Core)
-  identity-client/         @sardanapal/identity-client   plain TypeScript, no Angular (Identity), depends on client
-  ng/                      @sardanapal/ng                Angular library, depends on both
+  client/                  @harpm/sardanapal-client            plain TypeScript, no Angular (Core)
+  identity-client/         @harpm/sardanapal-identity-client   plain TypeScript, no Angular (Identity), depends on client
+  ng/                      @harpm/sardanapal-ng                Angular library, depends on both
 src/                       Small Angular demo app for clicking through the controls
 ```
 
@@ -32,16 +35,16 @@ Three packages. Do not fold the HTTP client into the Angular library. Core and I
 
 | Package              | Role                                                                                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@sardanapal/client` | Core side: `SardanapalHttpClient` (transport and interceptor hooks), `SardanapalHttpError`, the `IResponse<T>` envelope, storage adapters, direction, CRUD, and panel calls. No Angular dependency. |
-| `@sardanapal/identity-client` | Identity side: `SardanapalAuthService` (login, token cache, automatic refresh, session) and `SardanapalJwtService` (claims), plus `SardanapalAccountClient` and `SardanapalOtpAccountClient` (register, edit, change password, OTP flows). Plugs into the core client as an interceptor. No Angular dependency. |
-| `@sardanapal/ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on both clients. |
+| `@harpm/sardanapal-client` | Core side: `SardanapalHttpClient` (transport and interceptor hooks), `SardanapalHttpError`, the `IResponse<T>` envelope, storage adapters, direction, CRUD, and panel calls. No Angular dependency. |
+| `@harpm/sardanapal-identity-client` | Identity side: `SardanapalAuthService` (login, token cache, automatic refresh, session) and `SardanapalJwtService` (claims), plus `SardanapalAccountClient` and `SardanapalOtpAccountClient` (register, edit, change password, OTP flows). Plugs into the core client as an interceptor. No Angular dependency. |
+| `@harpm/sardanapal-ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on both clients. |
 
 
 Layout in `projects/client/src`: each service has a folder named after it, holding the class file (`http/sardanapal-http-client.ts`, `crud/sardanapal-crud-client.ts`, `panel/sardanapal-panel-client.ts`, `direction/sardanapal-direction-service.ts`). Supporting types stay in their own folders (`errors`, `storage`, `response`, `grid`).
 
 Layout in `projects/identity-client/src`: each service has a folder named after it, holding the class file (`auth/sardanapal-auth-service.ts`, `jwt/sardanapal-jwt-service.ts`, `account/sardanapal-account-client.ts`, `otp/sardanapal-otp-account-client.ts`). Supporting types stay in their own folder (`models`).
 
-`ng-zorro-antd` is Angular-only (forms, CDK, dependency injection). The `s-*` components stay in `@sardanapal/ng`. A later React or Vue package would wrap `@sardanapal/client` and would not reuse the Angular templates. Do not compile the controls to Angular Elements: that ships the Angular runtime into every host and breaks `ngModel` and reactive forms.
+`ng-zorro-antd` is Angular-only (forms, CDK, dependency injection). The `s-*` components stay in `@harpm/sardanapal-ng`. A later React or Vue package would wrap `@harpm/sardanapal-client` and would not reuse the Angular templates. Do not compile the controls to Angular Elements: that ships the Angular runtime into every host and breaks `ngModel` and reactive forms.
 
 Keep ng-zorro. It covers the first controls, ships a `fa_IR` locale, and flips layout when `dir="rtl"` is set on `html` (CDK bidi plus `NzConfigService`). `s-grid` talks to panel search through its own inputs, with `nz-table` behind that API, so the table widget can be replaced later without renaming the component.
 
@@ -49,7 +52,7 @@ Keep ng-zorro. It covers the first controls, ships a `fa_IR` locale, and flips l
 
 ```bash
 npm install          # see "Toolchain" below for the registry and Node notes
-npm test             # client and identity-client (vitest), then @sardanapal/ng (ng test)
+npm test             # builds the clients, then client and identity-client (vitest), then @harpm/sardanapal-ng (ng test)
 npm run build        # clients (tsc), then ng build ng, then ng build demo
 npm start            # builds the clients, then serves the demo app
 ```
@@ -59,10 +62,10 @@ Run the tests before any commit. Do not commit while tests are failing.
 ### Toolchain
 
 - **Angular 22 needs Node `^22.22.3`, `^24.15` or newer.** The machine's system Node can be older, so the repo carries its own: the devDependency `node` (Node 24) puts a `node` shim in `node_modules/.bin`. `npm run` scripts put that folder first on `PATH`, so `ng`, `vitest` and `tsc` run on it. Do not rely on `node -v` in a plain shell; use `npm run <script>` or `npx ng ...` after putting `node_modules/.bin` first on `PATH`.
-- **Registry.** The lockfile resolves from `registry.npmjs.org`. If the user's npm config points at a private feed with an expired credential, pass `--registry=https://registry.npmjs.org/` (or set `npm_config_registry`) for that command. Do not edit the user's `.npmrc`.
+- **Registry.** The lockfile resolves from `registry.npmjs.org`. The project `.npmrc` keeps installs on npmjs and sends only the `@harpm` scope to GitHub Packages (`NODE_AUTH_TOKEN`). If the user's npm config points at a private feed with an expired credential, pass `--registry=https://registry.npmjs.org/` (or set `npm_config_registry`) for that command. Do not edit the user's `.npmrc`.
 - **npm 10.9 crashes** (`Cannot read properties of null (reading 'edgesOut')`) when the workspace peer sets are resolved. Install with npm 11 instead: `npx --yes npm@11 install`. npm 11 only runs install scripts that are allow-listed. `allowScripts` in the root `package.json` allows the `node` package, whose preinstall downloads the Node binary. When a new dependency needs an install script, review it with `npx npm@11 install-scripts ls` before approving it.
-- **TypeScript.** `ng-packagr` 22 requires TypeScript `>=6.0 <6.1`, so the root and the Angular packages use 6.0. `@sardanapal/client` and `@sardanapal/identity-client` stay on 5.9 (npm nests that copy under each package). Vitest is `^4` everywhere.
-- **Path mapping.** The root `tsconfig.json` maps `@sardanapal/ng` to the library source, so the demo app does not need the library built first. It does need the two clients built (`npm run build:clients`), because they resolve through their `dist`.
+- **TypeScript.** `ng-packagr` 22 requires TypeScript `>=6.0 <6.1`, so the root and the Angular packages use 6.0. `@harpm/sardanapal-client` and `@harpm/sardanapal-identity-client` stay on 5.9 (npm nests that copy under each package). Vitest is `^4` everywhere.
+- **Path mapping.** The root `tsconfig.json` maps `@harpm/sardanapal-ng` to the library source, so the demo app does not need the library built first. It does need the two clients built (`npm run build:clients`), because they resolve through their `dist`.
 
 ## Workflow rules
 
@@ -137,7 +140,7 @@ POST {apiBaseUrl}/account/reset-password
 
 ### Auth
 
-Lives in `@sardanapal/identity-client`. Matches the Identity account and token services.
+Lives in `@harpm/sardanapal-identity-client`. Matches the Identity account and token services.
 
 - Request header name is `AUTH`. The value is the raw JWT. Do not send an `Authorization` header and do not add a `Bearer`  prefix.
 - Login body is `{ username, password }`. Success data is `{ token }`. Read the lifetime from the JWT `exp` claim. `LoginDto` has no `expiresIn` and no refresh token.
@@ -153,7 +156,7 @@ Lives in `@sardanapal/identity-client`. Matches the Identity account and token s
 
 ### Account and OTP
 
-Live in `@sardanapal/identity-client`. `SardanapalAccountClient` matches `IAccountService` (everything except `Login` and `RefreshToken`, which stay on `SardanapalAuthService`). `SardanapalOtpAccountClient` extends it with `IOtpAccountService`. Both take `{ auth, endpoints? }` and send through `auth.$request`, so calls share the HTTP client and carry the `AUTH` header. Methods carry the `$` prefix and return the body as received, like the CRUD client. Override any route with `endpoints`.
+Live in `@harpm/sardanapal-identity-client`. `SardanapalAccountClient` matches `IAccountService` (everything except `Login` and `RefreshToken`, which stay on `SardanapalAuthService`). `SardanapalOtpAccountClient` extends it with `IOtpAccountService`. Both take `{ auth, endpoints? }` and send through `auth.$request`, so calls share the HTTP client and carry the `AUTH` header. Methods carry the `$` prefix and return the body as received, like the CRUD client. Override any route with `endpoints`.
 
 | Method | Request | Response `data` | Default route | `AUTH` |
 | --- | --- | --- | --- | --- |
@@ -179,7 +182,7 @@ Live in `@sardanapal/identity-client`. `SardanapalAccountClient` matches `IAccou
 
 Method names match Core. There is no `Save` and no `Search`. Create is `add`. List is `getAll`. Update is `edit`.
 
-`SardanapalCrudClient` lives in `@sardanapal/client`. Like the auth service, each method carries the `$` prefix and returns an `Observable<IResponse<T>>`. axios deserializes the body and the method only supplies the type, so the body is returned exactly as received. `IResponse.isSuccess` is a readonly boolean the host sends (Core's `IsSuccess`), not a method. Check it and show `userMessage` yourself. A failure status inside a 2xx body is returned, not thrown. Non-2xx and transport failures reject with `SardanapalHttpError`. Pass the shared `SardanapalHttpClient` so calls carry the `AUTH` header.
+`SardanapalCrudClient` lives in `@harpm/sardanapal-client`. Like the auth service, each method carries the `$` prefix and returns an `Observable<IResponse<T>>`. axios deserializes the body and the method only supplies the type, so the body is returned exactly as received. `IResponse.isSuccess` is a readonly boolean the host sends (Core's `IsSuccess`), not a method. Check it and show `userMessage` yourself. A failure status inside a 2xx body is returned, not thrown. Non-2xx and transport failures reject with `SardanapalHttpError`. Pass the shared `SardanapalHttpClient` so calls carry the `AUTH` header.
 
 There is one error type and one error stream. A request that fails (transport failure with `status` 0, or non-2xx) produces a single `SardanapalHttpError`. `SardanapalHttpClient` reports it once on its `SardanapalErrorChannel` (`client.errors.error$`, also `client.httpError$`) and rejects the call with the same instance. Calls made through a CRUD or panel client set `resource` and `operation` (for example `orders` and `getAll`) on the error, so a subscriber can tell them apart. Interceptors do not report: they throw a plain `SardanapalHttpError` and the client reports it. A 2xx body with a failure `statusCode` is not an error. Pass `errors` in the `SardanapalHttpClient` options to share one channel between several clients.
 
@@ -256,7 +259,7 @@ Direction is a UI concern.
 
 ## Angular bridge
 
-Lives in `@sardanapal/ng`. A host registers it once:
+Lives in `@harpm/sardanapal-ng`. A host registers it once:
 
 ```ts
 export const appConfig: ApplicationConfig = {
@@ -319,13 +322,26 @@ Further controls use the same selector and accessor pattern. Do not rename a con
 - User-facing strings on `userMessage` are already localized by the host. The 403 password-change body from the Identity authorize filter is a hardcoded English message, not the envelope.
 - `pageIndex` is zero-based. `pageSize` `0` means unpaged.
 - Branch that matches the sibling repos is `master`.
+- `Build.json` keys are lowercase (`version`, `registry`, `install_registry`, `repository`, `packages`) but the Go struct in `SDBuild.go` is PascalCase — Go's `encoding/json` matches case-insensitively, so this is intentional.
 
 ## Packaging
 
-The three packages stay **private** (`private: true`, version `0.0.0`). Do not publish them to npmjs or to the private feed until the user asks. A host in this repo uses the npm workspaces. A host in another repo can:
+The three libraries publish to GitHub Packages at `https://npm.pkg.github.com` under the `@harpm` scope. `Build.json` owns the published version; the library `package.json` files stay at `0.0.0` in git so the workspace lockfile stays consistent. `SDBuild.go` stamps the version (and inter-package dependencies) after tests, then builds and publishes. Push to `master` runs `.github/workflows/npm.yml`, which calls `go run SDBuild.go` with `NODE_AUTH_TOKEN` from the `GITHUBTOKEN` secret (`write:packages`). The demo app stays unpublished.
 
-1. `npm run build` here, then depend on the built folders with `file:` (`projects/client`, `projects/identity-client`, `dist/ng`), or
-2. `npm pack` those folders and install the tarballs.
+| Package | Publish folder |
+| --- | --- |
+| `@harpm/sardanapal-client` | `projects/client` (`files: ["dist"]`) |
+| `@harpm/sardanapal-identity-client` | `projects/identity-client` (`files: ["dist"]`) |
+| `@harpm/sardanapal-ng` | `dist/ng` (ng-packagr output) |
 
-`@sardanapal/client` and `@sardanapal/identity-client` publish from their `dist` (`files: ["dist"]`). `@sardanapal/ng` is the ng-packagr output in `dist/ng`. When a feed is chosen later, drop `private`, set a real version, and publish those three folders only — never the demo app.
+A host installs from GitHub Packages with a `read:packages` token:
+
+```
+@harpm:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+```bash
+npm install @harpm/sardanapal-client @harpm/sardanapal-identity-client @harpm/sardanapal-ng
+```
 

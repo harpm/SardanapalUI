@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "start": "npm run build:clients && ng serve demo",
-    "test": "npm run test -w @sardanapal/client -w @sardanapal/identity-client && ng test ng --no-watch",
-    "build:clients": "npm run build -w @sardanapal/client && npm run build -w @sardanapal/identity-client",
+    "test": "npm run build:clients && npm run test -w @harpm/sardanapal-client -w @harpm/sardanapal-identity-client && ng test ng --no-watch",
+    "build:clients": "npm run build -w @harpm/sardanapal-client && npm run build -w @harpm/sardanapal-identity-client",
     "build": "npm run build:clients && ng build ng && ng build demo"
   },
   "devDependencies": {

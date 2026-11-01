@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
-import type { SardanapalDirectionService, SardanapalHttpClient } from '@sardanapal/client';
-import type { SardanapalAuthService } from '@sardanapal/identity-client';
+import type { SardanapalDirectionService, SardanapalHttpClient } from '@harpm/sardanapal-client';
+import type { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 import type { SardanapalNgOptions } from './options';
 
 /** The options passed to `SardanapalNg.providers`. */

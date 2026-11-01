@@ -6,7 +6,7 @@ import {
   SardanapalAccountClient,
   SardanapalAuthService,
   SardanapalOtpAccountClient,
-} from './index';
+} from '../index';
 
 const baseUrl = 'http://localhost:5000';
 

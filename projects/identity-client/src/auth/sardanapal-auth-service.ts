@@ -24,7 +24,7 @@ import {
   throwError,
   type Observable,
 } from 'rxjs';
-import { SardanapalJwtService, type AuthClaims } from './jwt';
+import { SardanapalJwtService, type AuthClaims } from '../jwt/sardanapal-jwt-service';
 
 declare module 'axios' {
   interface AxiosRequestConfig {

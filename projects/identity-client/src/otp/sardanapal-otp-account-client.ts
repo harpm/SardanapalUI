@@ -5,8 +5,8 @@ import {
   defaultAccountEndpoints,
   type AccountEndpointMap,
   type SardanapalAccountClientOptions,
-} from './account';
-import type { LoginData } from './auth';
+} from '../account/sardanapal-account-client';
+import type { LoginData } from '../auth/sardanapal-auth-service';
 import type {
   OtpRequestModel,
   OtpResponseModel,
@@ -14,7 +14,7 @@ import type {
   ResetPasswordModel,
   ResetPasswordRequestModel,
   UserEditableModel,
-} from './models';
+} from '../models/models';
 
 /** Account endpoints plus one path per OTP method. Every OTP call is a `POST`. */
 export interface OtpAccountEndpointMap extends AccountEndpointMap {

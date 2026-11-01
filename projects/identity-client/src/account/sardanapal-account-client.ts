@@ -1,13 +1,13 @@
 import type { AxiosRequestConfig } from 'axios';
 import type { EntityKey, IResponse } from '@sardanapal/client';
 import type { Observable } from 'rxjs';
-import type { SardanapalAuthService } from './auth';
+import type { SardanapalAuthService } from '../auth/sardanapal-auth-service';
 import type {
   ChangePasswordModel,
   ChangeUserPasswordModel,
   RegisterModel,
   UserEditableModel,
-} from './models';
+} from '../models/models';
 
 /**
  * Path templates, one per account method. `{id}` is replaced with the URL-encoded

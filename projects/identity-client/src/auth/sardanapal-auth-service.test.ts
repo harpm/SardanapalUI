@@ -8,7 +8,7 @@ import {
 } from '@sardanapal/client';
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
-import { SardanapalAuthService, SardanapalJwtService } from './index';
+import { SardanapalAuthService, SardanapalJwtService } from '../index';
 
 const baseUrl = 'http://localhost:5000';
 

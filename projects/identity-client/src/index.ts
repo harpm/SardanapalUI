@@ -1,16 +1,16 @@
-export { SardanapalAuthService } from './auth';
+export { SardanapalAuthService } from './auth/sardanapal-auth-service';
 export type {
   LoginData,
   SardanapalAuthServiceOptions,
   Session,
   EndpointMap,
-} from './auth';
-export { SardanapalJwtService } from './jwt';
-export type { AuthClaims } from './jwt';
-export { SardanapalAccountClient, defaultAccountEndpoints } from './account';
-export type { AccountEndpointMap, SardanapalAccountClientOptions } from './account';
-export { SardanapalOtpAccountClient, defaultOtpAccountEndpoints } from './otp';
-export type { OtpAccountEndpointMap, SardanapalOtpAccountClientOptions } from './otp';
+} from './auth/sardanapal-auth-service';
+export { SardanapalJwtService } from './jwt/sardanapal-jwt-service';
+export type { AuthClaims } from './jwt/sardanapal-jwt-service';
+export { SardanapalAccountClient, defaultAccountEndpoints } from './account/sardanapal-account-client';
+export type { AccountEndpointMap, SardanapalAccountClientOptions } from './account/sardanapal-account-client';
+export { SardanapalOtpAccountClient, defaultOtpAccountEndpoints } from './otp/sardanapal-otp-account-client';
+export type { OtpAccountEndpointMap, SardanapalOtpAccountClientOptions } from './otp/sardanapal-otp-account-client';
 export type {
   ChangePasswordModel,
   ChangeUserPasswordModel,
@@ -20,4 +20,4 @@ export type {
   ResetPasswordModel,
   ResetPasswordRequestModel,
   UserEditableModel,
-} from './models';
+} from './models/models';

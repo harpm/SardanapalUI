@@ -54,15 +54,6 @@ func run(name string, args ...string) error {
 	return cmd.Run()
 }
 
-func runIn(dir string, name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Dir = dir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = os.Environ()
-	return cmd.Run()
-}
-
 func stampPackage(pkg PackageInfo, version string, repository string) error {
 	manifestPath := filepath.Join(pkg.Path, "package.json")
 	raw, err := os.ReadFile(manifestPath)
@@ -171,7 +162,7 @@ func main() {
 		}
 
 		Log(fmt.Sprintf("Publishing %s from %s", pkg.Name, pkg.Publish_Path), Info_Level)
-		err = runIn(pkg.Publish_Path, "npm", "publish", "--registry", data.Registry, "--ignore-scripts")
+		err = run("npm", "publish", pkg.Publish_Path, "--registry", data.Registry, "--ignore-scripts")
 		if err != nil {
 			Log(fmt.Sprintf("Failed to publish %s: %s", pkg.Name, err), Error_Level)
 			panic(err)

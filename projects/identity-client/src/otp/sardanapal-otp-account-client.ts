@@ -1,4 +1,4 @@
-import { StatusCode, type EntityKey, type IResponse } from '@harpm/sardanapal-client';
+import { StatusCode, type ClientOperation, type EntityKey, type IResponse } from '@harpm/sardanapal-client';
 import { tap, type Observable } from 'rxjs';
 import {
   SardanapalAccountClient,
@@ -62,7 +62,7 @@ export class SardanapalOtpAccountClient<
    * the code, when the host returns it (Identity's `RequestLoginOtp` does not set it).
    */
   $requestLoginOtp(model: OtpRequestModel): Observable<IResponse<TUserKey>> {
-    return this.$post<TUserKey>(this.endpoints.requestLoginOtp, model);
+    return this.$post<TUserKey>(this.endpoints.requestLoginOtp, model, 'requestLoginOtp');
   }
 
   /**
@@ -70,7 +70,7 @@ export class SardanapalOtpAccountClient<
    * token, so the session stream and the `AUTH` header pick it up.
    */
   $loginWithOtp(model: OtpResponseModel<TUserKey>): Observable<IResponse<LoginData>> {
-    return this.$post<LoginData>(this.endpoints.loginWithOtp, model).pipe(
+    return this.$post<LoginData>(this.endpoints.loginWithOtp, model, 'loginWithOtp').pipe(
       tap((result) => {
         const token = result.data?.token;
         if (result.statusCode === StatusCode.Succeeded && token) {
@@ -85,27 +85,27 @@ export class SardanapalOtpAccountClient<
    * user key, when the host returns it (Identity's `RequestRegisterOtp` does not set it).
    */
   $requestRegisterOtp(model: OtpRequestModel): Observable<IResponse<TUserKey>> {
-    return this.$post<TUserKey>(this.endpoints.requestRegisterOtp, model);
+    return this.$post<TUserKey>(this.endpoints.requestRegisterOtp, model, 'requestRegisterOtp');
   }
 
   $registerWithOtp(model: OtpResponseModel<TUserKey>): Observable<IResponse<boolean>> {
-    return this.$post<boolean>(this.endpoints.registerWithOtp, model);
+    return this.$post<boolean>(this.endpoints.registerWithOtp, model, 'registerWithOtp');
   }
 
   /** Asks the host to send a reset code. `data` is the user key to send back with the code. */
   $requestResetPassword(model: ResetPasswordRequestModel): Observable<IResponse<TUserKey>> {
-    return this.$post<TUserKey>(this.endpoints.requestResetPassword, model);
+    return this.$post<TUserKey>(this.endpoints.requestResetPassword, model, 'requestResetPassword');
   }
 
   $resetPassword(model: ResetPasswordModel<TUserKey>): Observable<IResponse<boolean>> {
-    return this.$post<boolean>(this.endpoints.resetPassword, model);
+    return this.$post<boolean>(this.endpoints.resetPassword, model, 'resetPassword');
   }
 
-  private $post<T>(template: string, data: unknown): Observable<IResponse<T>> {
-    return this.$send<T>(this.buildPath(template), {
-      method: 'POST',
-      data,
-      ...this.anonymous(),
-    });
+  private $post<T>(template: string, data: unknown, operation: ClientOperation): Observable<IResponse<T>> {
+    return this.$send<T>(
+      this.buildPath(template),
+      { method: 'POST', data, ...this.anonymous() },
+      operation,
+    );
   }
 }

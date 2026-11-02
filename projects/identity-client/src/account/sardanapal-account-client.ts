@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios';
-import type { EntityKey, IResponse } from '@harpm/sardanapal-client';
+import type { ClientOperation, EntityKey, IResponse } from '@harpm/sardanapal-client';
 import type { Observable } from 'rxjs';
 import type { SardanapalAuthService } from '../auth/sardanapal-auth-service';
 import type {
@@ -52,6 +52,9 @@ export class SardanapalAccountClient<
   TRegister extends RegisterModel = RegisterModel,
   TEditable extends UserEditableModel = UserEditableModel,
 > {
+  /** `resource` of the error context on every account and OTP call. */
+  static readonly resource = 'account';
+
   protected readonly auth: SardanapalAuthService;
   /** Defaults merged with the `endpoints` option. A subclass redeclares this with its wider map type. */
   protected readonly endpoints: AccountEndpointMap;
@@ -73,29 +76,35 @@ export class SardanapalAccountClient<
 
   /** Sent with the `AUTH` header when a token is cached, so an admin can register users. */
   $register(model: TRegister): Observable<IResponse<TUserKey>> {
-    return this.$send<TUserKey>(this.buildPath(this.endpoints.register), {
-      method: 'POST',
-      data: model,
-    });
+    return this.$send<TUserKey>(
+      this.buildPath(this.endpoints.register),
+      { method: 'POST', data: model },
+      'register',
+    );
   }
 
   $getEditable(id: TUserKey): Observable<IResponse<TEditable>> {
-    return this.$send<TEditable>(this.buildPath(this.endpoints.getEditable, id), {
-      method: 'GET',
-    });
+    return this.$send<TEditable>(
+      this.buildPath(this.endpoints.getEditable, id),
+      { method: 'GET' },
+      'getEditable',
+    );
   }
 
   $edit(id: TUserKey, model: TEditable): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(this.buildPath(this.endpoints.edit, id), {
-      method: 'PUT',
-      data: model,
-    });
+    return this.$send<boolean>(
+      this.buildPath(this.endpoints.edit, id),
+      { method: 'PUT', data: model },
+      'edit',
+    );
   }
 
   $delete(id: TUserKey): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(this.buildPath(this.endpoints.delete, id), {
-      method: 'DELETE',
-    });
+    return this.$send<boolean>(
+      this.buildPath(this.endpoints.delete, id),
+      { method: 'DELETE' },
+      'delete',
+    );
   }
 
   /**
@@ -105,24 +114,36 @@ export class SardanapalAccountClient<
    * carries `must_change_pw` afterwards, so log in again to get a fresh one.
    */
   $changePassword(model: ChangePasswordModel): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(this.buildPath(this.endpoints.changePassword), {
-      method: 'POST',
-      data: model,
-      ...this.anonymous(),
-    });
+    return this.$send<boolean>(
+      this.buildPath(this.endpoints.changePassword),
+      { method: 'POST', data: model, ...this.anonymous() },
+      'changePassword',
+    );
   }
 
   /** Sets a password for a user id. Sent with the `AUTH` header, for an administrator. */
   $changeUserPassword(model: ChangeUserPasswordModel<TUserKey>): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(this.buildPath(this.endpoints.changeUserPassword), {
-      method: 'POST',
-      data: model,
-    });
+    return this.$send<boolean>(
+      this.buildPath(this.endpoints.changeUserPassword),
+      { method: 'POST', data: model },
+      'changeUserPassword',
+    );
   }
 
-  /** Sends the request and types the deserialized body as `IResponse<T>`. */
-  protected $send<T>(path: string, config: AxiosRequestConfig): Observable<IResponse<T>> {
-    return this.auth.$request<IResponse<T>>(path, config);
+  /**
+   * Sends the request and types the deserialized body as `IResponse<T>`. The call is
+   * tagged with the account resource and its operation, so a failure on
+   * `httpError$` can be told apart.
+   */
+  protected $send<T>(
+    path: string,
+    config: AxiosRequestConfig,
+    operation: ClientOperation,
+  ): Observable<IResponse<T>> {
+    return this.auth.$request<IResponse<T>>(path, {
+      ...config,
+      errorContext: { resource: SardanapalAccountClient.resource, operation },
+    });
   }
 
   /** Request options for a call that needs no token: no `AUTH` header and no refresh first. */

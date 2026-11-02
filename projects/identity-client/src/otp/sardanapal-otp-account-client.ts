@@ -101,11 +101,12 @@ export class SardanapalOtpAccountClient<
     return this.$post<boolean>(this.endpoints.resetPassword, model, 'resetPassword');
   }
 
+  /** Every OTP call is anonymous: no `AUTH` header and no refresh first. */
   private $post<T>(template: string, data: unknown, operation: ClientOperation): Observable<IResponse<T>> {
-    return this.$send<T>(
-      this.buildPath(template),
-      { method: 'POST', data, ...this.anonymous() },
-      operation,
-    );
+    return this.client.$post<IResponse<T>>(this.buildPath(template), {
+      body: data,
+      ...this.context(operation),
+      ...this.anonymous(),
+    });
   }
 }

@@ -2,6 +2,10 @@ export { SardanapalErrorChannel, SardanapalHttpError } from './errors/sardanapal
 export type { ClientOperation, SardanapalErrorContext } from './errors/sardanapal-http-error';
 export { SardanapalHttpClient } from './http/sardanapal-http-client';
 export type {
+  QueryParams,
+  RequestHeaders,
+  SardanapalCallOptions,
+  SardanapalRequestOptions,
   SardanapalHttpClientOptions,
   SardanapalHttpInterceptor,
 } from './http/sardanapal-http-client';

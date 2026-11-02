@@ -53,6 +53,7 @@ export class SardanapalNg {
 
   private static createAuthService(): SardanapalAuthService {
     const options = inject(SARDANAPAL_NG_OPTIONS);
+    // The auth service registers its interceptor on the shared client, so every call carries AUTH.
     return new SardanapalAuthService({ ...options.auth, client: inject(SARDANAPAL_HTTP_CLIENT) });
   }
 

@@ -1,4 +1,5 @@
 export { SardanapalAuthService } from './auth/sardanapal-auth-service';
+export { SardanapalAuthInterceptor } from './auth/sardanapal-auth-interceptor';
 export type {
   LoginData,
   SardanapalAuthServiceOptions,

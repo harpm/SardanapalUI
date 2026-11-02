@@ -53,7 +53,6 @@ describe('SardanapalNg.providers', () => {
     expect(http).toBeInstanceOf(SardanapalHttpClient);
     expect(http.apiBaseUrl).toBe('http://localhost:5000');
     expect(auth).toBeInstanceOf(SardanapalAuthService);
-    expect(auth.httpError$).toBe(http.httpError$);
     expect(TestBed.inject(SARDANAPAL_HTTP_CLIENT)).toBe(http);
   });
 

@@ -6,6 +6,7 @@ import {
   SardanapalAccountClient,
   SardanapalAuthService,
   SardanapalOtpAccountClient,
+  type SardanapalAccountClientOptions,
 } from '../index';
 
 const baseUrl = 'http://localhost:5000';
@@ -38,6 +39,16 @@ class AccountTestKit {
     };
     this.http = new SardanapalHttpClient({ apiBaseUrl: baseUrl, adapter });
     this.auth = new SardanapalAuthService({ client: this.http });
+  }
+
+  /** An account client wired to this kit's shared HTTP client and auth service. */
+  account(endpoints?: SardanapalAccountClientOptions['endpoints']): SardanapalAccountClient {
+    return new SardanapalAccountClient({ client: this.http, auth: this.auth, endpoints });
+  }
+
+  /** An OTP account client wired to this kit's shared HTTP client and auth service. */
+  otp(endpoints?: SardanapalAccountClientOptions['endpoints']): SardanapalOtpAccountClient {
+    return new SardanapalOtpAccountClient({ client: this.http, auth: this.auth, endpoints });
   }
 
   get last(): InternalAxiosRequestConfig {
@@ -98,7 +109,7 @@ describe('SardanapalAuthService.setToken', () => {
     kit.auth.session$.subscribe((session) => seen.push(session.token));
 
     const token = kit.signIn();
-    await firstValueFrom(kit.auth.$request('/orders'));
+    await firstValueFrom(kit.http.$get('/orders'));
 
     expect(seen).toEqual([null, token]);
     expect(kit.auth.getSession().claims?.id).toBe('7');
@@ -114,14 +125,20 @@ describe('SardanapalAuthService.setToken', () => {
 });
 
 describe('SardanapalAccountClient', () => {
+  it('requires a client', () => {
+    const kit = new AccountTestKit();
+    expect(() => new SardanapalAccountClient({ auth: kit.auth } as never)).toThrow('client is required.');
+  });
+
   it('requires an auth service', () => {
-    expect(() => new SardanapalAccountClient({} as never)).toThrow('auth is required.');
+    const kit = new AccountTestKit();
+    expect(() => new SardanapalAccountClient({ client: kit.http } as never)).toThrow('auth is required.');
   });
 
   it('registers with a POST and returns the body as received', async () => {
     const kit = new AccountTestKit();
     kit.reply = () => ({ data: AccountTestKit.envelope(12) });
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
     const model = { username: 'ada', password: 'secret', roles: [1, 2] };
 
     const result = await firstValueFrom(account.$register(model));
@@ -135,7 +152,7 @@ describe('SardanapalAccountClient', () => {
   it('sends AUTH on register, getEditable, edit, delete and changeUserPassword', async () => {
     const kit = new AccountTestKit();
     const token = kit.signIn();
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
     const editable = { username: 'ada', password: 'x', roles: [1], claims: [3] };
 
     const calls = [
@@ -155,7 +172,7 @@ describe('SardanapalAccountClient', () => {
     const kit = new AccountTestKit();
     const editable = { username: 'ada', password: '', roles: [1], claims: [] };
     kit.reply = () => ({ data: AccountTestKit.envelope(editable) });
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
 
     const result = await firstValueFrom(account.$getEditable(7));
 
@@ -166,7 +183,7 @@ describe('SardanapalAccountClient', () => {
 
   it('edits with a PUT and deletes with a DELETE', async () => {
     const kit = new AccountTestKit();
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
     const editable = { username: 'ada', password: 'x', roles: [1], claims: [3] };
 
     await firstValueFrom(account.$edit(7, editable));
@@ -181,7 +198,7 @@ describe('SardanapalAccountClient', () => {
 
   it('requires a key when the path has an id', () => {
     const kit = new AccountTestKit();
-    const account = new SardanapalAccountClient<string>({ auth: kit.auth });
+    const account = new SardanapalAccountClient<string>({ client: kit.http, auth: kit.auth });
 
     expect(() => account.$delete('')).toThrow('id is required.');
     expect(kit.calls).toHaveLength(0);
@@ -189,7 +206,7 @@ describe('SardanapalAccountClient', () => {
 
   it('encodes a string key in the path', async () => {
     const kit = new AccountTestKit();
-    const account = new SardanapalAccountClient<string>({ auth: kit.auth });
+    const account = new SardanapalAccountClient<string>({ client: kit.http, auth: kit.auth });
 
     await firstValueFrom(account.$delete('a/b c'));
 
@@ -199,7 +216,7 @@ describe('SardanapalAccountClient', () => {
   it('changes the password with the old one, without the AUTH header', async () => {
     const kit = new AccountTestKit();
     kit.signIn({ must_change_pw: 'true' });
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
     const model = { username: 'ada', oldPassword: 'old', newPassword: 'new' };
 
     const result = await firstValueFrom(account.$changePassword(model));
@@ -213,7 +230,7 @@ describe('SardanapalAccountClient', () => {
 
   it('changes a password by user id with the key and new password', async () => {
     const kit = new AccountTestKit();
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
 
     await firstValueFrom(account.$changeUserPassword({ userId: 7, newPassword: 'n' }));
 
@@ -223,10 +240,7 @@ describe('SardanapalAccountClient', () => {
 
   it('overrides endpoints and ignores blank overrides', async () => {
     const kit = new AccountTestKit();
-    const account = new SardanapalAccountClient({
-      auth: kit.auth,
-      endpoints: { delete: 'users/{id}/remove', register: '  ', edit: undefined },
-    });
+    const account = kit.account({ delete: 'users/{id}/remove', register: '  ', edit: undefined });
 
     await firstValueFrom(account.$delete(5));
     expect(kit.url()).toBe(`${baseUrl}/users/5/remove`);
@@ -241,7 +255,7 @@ describe('SardanapalAccountClient', () => {
   it('returns a failure envelope inside a 2xx body without throwing', async () => {
     const kit = new AccountTestKit();
     kit.reply = () => ({ data: AccountTestKit.envelope(undefined, 1, 'Wrong password.') });
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
     const errors: SardanapalHttpError[] = [];
     kit.http.httpError$.subscribe((error) => errors.push(error));
 
@@ -256,7 +270,7 @@ describe('SardanapalAccountClient', () => {
   it('rejects a non-2xx response with one reported SardanapalHttpError', async () => {
     const kit = new AccountTestKit();
     kit.reply = () => ({ data: { message: 'boom' }, status: 500 });
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
     const errors: SardanapalHttpError[] = [];
     kit.http.httpError$.subscribe((error) => errors.push(error));
 
@@ -271,7 +285,7 @@ describe('SardanapalAccountClient', () => {
     const kit = new AccountTestKit();
     kit.signIn();
     kit.reply = () => ({ data: {}, status: 401 });
-    const account = new SardanapalAccountClient({ auth: kit.auth });
+    const account = kit.account();
 
     await firstValueFrom(account.$delete(7)).catch(() => undefined);
 
@@ -285,7 +299,7 @@ describe('SardanapalOtpAccountClient', () => {
 
   it('extends the account client', async () => {
     const kit = new AccountTestKit();
-    const otp = new SardanapalOtpAccountClient({ auth: kit.auth });
+    const otp = kit.otp();
 
     await firstValueFrom(otp.$delete(7));
 
@@ -308,7 +322,7 @@ describe('SardanapalOtpAccountClient', () => {
   ] as const)('%s posts to %s anonymously', async (method, path, model) => {
     const kit = new AccountTestKit();
     kit.signIn();
-    const otp = new SardanapalOtpAccountClient({ auth: kit.auth });
+    const otp = kit.otp();
 
     await firstValueFrom((otp[method] as (model: unknown) => ReturnType<typeof otp.$delete>)(model));
 
@@ -321,7 +335,7 @@ describe('SardanapalOtpAccountClient', () => {
   it('returns the user key from a login code request', async () => {
     const kit = new AccountTestKit();
     kit.reply = () => ({ data: AccountTestKit.envelope(7) });
-    const otp = new SardanapalOtpAccountClient({ auth: kit.auth });
+    const otp = kit.otp();
 
     const result = await firstValueFrom(otp.$requestLoginOtp(requestModel));
 
@@ -332,12 +346,12 @@ describe('SardanapalOtpAccountClient', () => {
     const kit = new AccountTestKit();
     const token = AccountTestKit.jwt({ id: '7', exp: AccountTestKit.farExp() });
     kit.reply = () => ({ data: AccountTestKit.envelope({ token }) });
-    const otp = new SardanapalOtpAccountClient({ auth: kit.auth });
+    const otp = kit.otp();
     const seen: Array<string | null> = [];
     kit.auth.session$.subscribe((session) => seen.push(session.token));
 
     const result = await firstValueFrom(otp.$loginWithOtp(responseModel));
-    await firstValueFrom(kit.auth.$request('/orders'));
+    await firstValueFrom(kit.http.$get('/orders'));
 
     expect(result.data?.token).toBe(token);
     expect(seen).toEqual([null, token]);
@@ -348,7 +362,7 @@ describe('SardanapalOtpAccountClient', () => {
     const kit = new AccountTestKit();
     const existing = kit.signIn();
     kit.reply = () => ({ data: AccountTestKit.envelope(undefined, 1, 'Wrong code.') });
-    const otp = new SardanapalOtpAccountClient({ auth: kit.auth });
+    const otp = kit.otp();
 
     const result = await firstValueFrom(otp.$loginWithOtp(responseModel));
 
@@ -359,7 +373,7 @@ describe('SardanapalOtpAccountClient', () => {
   it('does not store a token when a success body carries none', async () => {
     const kit = new AccountTestKit();
     kit.reply = () => ({ data: AccountTestKit.envelope({ token: '' }) });
-    const otp = new SardanapalOtpAccountClient({ auth: kit.auth });
+    const otp = kit.otp();
 
     await firstValueFrom(otp.$loginWithOtp(responseModel));
 
@@ -368,10 +382,7 @@ describe('SardanapalOtpAccountClient', () => {
 
   it('overrides OTP and account endpoints together', async () => {
     const kit = new AccountTestKit();
-    const otp = new SardanapalOtpAccountClient({
-      auth: kit.auth,
-      endpoints: { loginWithOtp: 'otp/login', delete: 'users/{id}' },
-    });
+    const otp = kit.otp({ loginWithOtp: 'otp/login', delete: 'users/{id}' });
 
     await firstValueFrom(otp.$loginWithOtp(responseModel));
     expect(kit.url()).toBe(`${baseUrl}/otp/login`);
@@ -386,7 +397,7 @@ describe('SardanapalOtpAccountClient', () => {
   it('rejects a non-2xx OTP response with one reported error', async () => {
     const kit = new AccountTestKit();
     kit.reply = () => ({ data: { message: 'down' }, status: 503 });
-    const otp = new SardanapalOtpAccountClient({ auth: kit.auth });
+    const otp = kit.otp();
     const errors: SardanapalHttpError[] = [];
     kit.http.httpError$.subscribe((error) => errors.push(error));
 

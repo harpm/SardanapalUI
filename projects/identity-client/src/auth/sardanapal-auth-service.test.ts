@@ -70,12 +70,12 @@ describe('auth', () => {
   });
 
   it('returns userMessage and does not cache a failed login', async () => {
-    const { client } = createClient(async () => ({
+    const { client, http } = createClient(async () => ({
       data: envelope(undefined, 1, 'Entered password or username is wrong.'),
     }));
 
     const httpErrors: SardanapalHttpError[] = [];
-    const errors = client.httpError$.subscribe((error) => httpErrors.push(error));
+    const errors = http.httpError$.subscribe((error) => httpErrors.push(error));
 
     const result = await firstValueFrom(client.$login('ada', 'wrong'));
 
@@ -88,7 +88,7 @@ describe('auth', () => {
 
   it('sends the raw JWT in AUTH and keeps Authorization off the request', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
-    const { client } = createClient(async (url, config) => {
+    const { client, http } = createClient(async (url, config) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
       }
@@ -99,15 +99,13 @@ describe('auth', () => {
     });
     await firstValueFrom(client.$login('ada', 'secret'));
 
-    await firstValueFrom(client.$request('/orders', {
-      headers: { Authorization: 'Bearer ignored' },
-    }));
+    await firstValueFrom(http.$get('/orders', { headers: { Authorization: 'Bearer ignored' } }));
   });
 
   it('replaces the cached token when the response carries AUTH', async () => {
     const original = jwt({ id: '7', exp: farExp(), sd_roles: '1' });
     const renewed = jwt({ id: '7', exp: farExp(), sd_roles: '2' });
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: original }) };
       }
@@ -115,7 +113,7 @@ describe('auth', () => {
     });
     await firstValueFrom(client.$login('ada', 'secret'));
 
-    await firstValueFrom(client.$request('/orders'));
+    await firstValueFrom(http.$get('/orders'));
 
     expect(client.getSession().token).toBe(renewed);
     expect(client.getSession().claims?.roles).toEqual(['2']);
@@ -123,17 +121,17 @@ describe('auth', () => {
 
   it('clears the token on HTTP 401', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
       }
       return { data: null, status: 401, headers: { AUTH: jwt({ id: '9', exp: farExp() }) } };
     });
     const httpErrors: SardanapalHttpError[] = [];
-    const errors = client.httpError$.subscribe((error) => httpErrors.push(error));
+    const errors = http.httpError$.subscribe((error) => httpErrors.push(error));
     await firstValueFrom(client.$login('ada', 'secret'));
 
-    await expect(firstValueFrom(client.$request('/orders'))).rejects.toMatchObject({ status: 401 });
+    await expect(firstValueFrom(http.$get('/orders'))).rejects.toMatchObject({ status: 401 });
 
     expect(client.getSession().token).toBeNull();
     expect(httpErrors).toMatchObject([{ status: 401, message: 'Unauthorized' }]);
@@ -142,7 +140,7 @@ describe('auth', () => {
 
   it('keeps the token and surfaces mustChangePassword on the password-change 403', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
       }
@@ -150,7 +148,7 @@ describe('auth', () => {
     });
     await firstValueFrom(client.$login('ada', 'secret'));
 
-    const error = await firstValueFrom(client.$request('/orders')).catch((caught: unknown) => caught);
+    const error = await firstValueFrom(http.$get('/orders')).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(SardanapalHttpError);
     expect(error).toMatchObject({ status: 403, mustChangePassword: true, message: 'Password change required.' });
@@ -160,17 +158,17 @@ describe('auth', () => {
 
   it('reports the password-change 403 once', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
       }
       return { data: { message: 'Password change required.' }, status: 403 };
     });
     const httpErrors: SardanapalHttpError[] = [];
-    const errors = client.httpError$.subscribe((error) => httpErrors.push(error));
+    const errors = http.httpError$.subscribe((error) => httpErrors.push(error));
     await firstValueFrom(client.$login('ada', 'secret'));
 
-    const error = await firstValueFrom(client.$request('/orders')).catch((caught: unknown) => caught);
+    const error = await firstValueFrom(http.$get('/orders')).catch((caught: unknown) => caught);
 
     expect(httpErrors).toEqual([error]);
     errors.unsubscribe();
@@ -179,7 +177,7 @@ describe('auth', () => {
   it('surfaces mustChangePassword when the password-change 403 arrives as an arraybuffer', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
     const body = new TextEncoder().encode(JSON.stringify({ message: 'Password change required.' }));
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
       }
@@ -188,7 +186,7 @@ describe('auth', () => {
     await firstValueFrom(client.$login('ada', 'secret'));
 
     const error = await firstValueFrom(
-      client.$request('/orders/excel', { responseType: 'arraybuffer' }),
+      http.$get('/orders/excel', { responseType: 'arraybuffer' }),
     ).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(SardanapalHttpError);
@@ -203,7 +201,7 @@ describe('auth', () => {
 
   it('surfaces mustChangePassword when the password-change 403 arrives as a blob', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
       }
@@ -215,7 +213,7 @@ describe('auth', () => {
     await firstValueFrom(client.$login('ada', 'secret'));
 
     const error = await firstValueFrom(
-      client.$request('/orders/excel', { responseType: 'blob' }),
+      http.$get('/orders/excel', { responseType: 'blob' }),
     ).catch((caught: unknown) => caught);
 
     expect(error).toMatchObject({ status: 403, mustChangePassword: true });
@@ -276,7 +274,7 @@ describe('auth', () => {
       releaseRefresh = resolve;
     });
     const auths: Array<string | null> = [];
-    const { client } = createClient(async (url, config) => {
+    const { client, http } = createClient(async (url, config) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: original }) };
       }
@@ -293,9 +291,9 @@ describe('auth', () => {
     await firstValueFrom(client.$login('ada', 'secret'));
 
     const pending = Promise.all([
-      firstValueFrom(client.$request('/a')),
-      firstValueFrom(client.$request('/b')),
-      firstValueFrom(client.$request('/c')),
+      firstValueFrom(http.$get('/a')),
+      firstValueFrom(http.$get('/b')),
+      firstValueFrom(http.$get('/c')),
     ]);
     releaseRefresh();
     await pending;
@@ -308,7 +306,7 @@ describe('auth', () => {
   it('does not refresh when the token is outside the window', async () => {
     const accessToken = jwt({ id: '7', exp: farExp() });
     let refreshCalls = 0;
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
       }
@@ -319,7 +317,7 @@ describe('auth', () => {
     }, { refreshUrl: true });
     await firstValueFrom(client.$login('ada', 'secret'));
 
-    await firstValueFrom(client.$request('/orders'));
+    await firstValueFrom(http.$get('/orders'));
 
     expect(refreshCalls).toBe(0);
   });
@@ -339,11 +337,11 @@ describe('auth', () => {
 
     const withoutUrl = createClient(handler);
     await firstValueFrom(withoutUrl.client.$login('ada', 'secret'));
-    await firstValueFrom(withoutUrl.client.$request('/orders'));
+    await firstValueFrom(withoutUrl.http.$get('/orders'));
 
     const disabled = createClient(handler, { refreshUrl: true, refreshThresholdMinutes: 0 });
     await firstValueFrom(disabled.client.$login('ada', 'secret'));
-    await firstValueFrom(disabled.client.$request('/orders'));
+    await firstValueFrom(disabled.http.$get('/orders'));
 
     expect(refreshCalls).toBe(0);
     await expect(firstValueFrom(withoutUrl.client.$refresh())).rejects.toThrow('Refresh URL is not configured.');
@@ -353,7 +351,7 @@ describe('auth', () => {
     const accessToken = jwt({ id: '7', exp: nearExp() });
     const renewed = jwt({ id: '7', exp: farExp() });
     const urls: string[] = [];
-    const { client } = createClient(async (url) => {
+    const { client, http } = createClient(async (url) => {
       urls.push(url);
       if (url.endsWith('/account/login')) {
         return { data: envelope({ token: accessToken }) };
@@ -362,7 +360,7 @@ describe('auth', () => {
     }, { refreshUrl: 'https://auth.example/token/refresh' });
     await firstValueFrom(client.$login('ada', 'secret'));
 
-    await firstValueFrom(client.$request('/orders'));
+    await firstValueFrom(http.$get('/orders'));
 
     expect(urls).toContain('https://auth.example/token/refresh');
     expect(client.getSession().token).toBe(renewed);
@@ -415,13 +413,17 @@ describe('auth', () => {
     const auth = new SardanapalAuthService({ client: core });
     await firstValueFrom(auth.$login('ada', 'secret'));
 
-    await firstValueFrom(core.$request('/orders'));
+    await firstValueFrom(core.$get('/orders'));
 
     expect(seen).toEqual([null, accessToken]);
   });
 
-  it('requires an apiBaseUrl when no client is supplied', () => {
-    expect(() => new SardanapalAuthService({})).toThrow('apiBaseUrl is required.');
+  it('requires a client', () => {
+    expect(() => new SardanapalAuthService({} as never)).toThrow('client is required.');
+  });
+
+  it('exposes anonymous request options that skip the token and the refresh', () => {
+    expect(SardanapalAuthService.anonymous).toEqual({ skipAuth: true, skipRefresh: true });
   });
 
   it('uses the supplied memory storage', () => {
@@ -472,7 +474,7 @@ function createClient(
   options: {
     refreshUrl?: boolean | string;
     refreshThresholdMinutes?: number;
-    tokenStorage?: MemoryStorage;
+    tokenStorage?: MemoryStorage | BrowserStorageAdapter;
   } = {},
 ) {
   const calls: InternalAxiosRequestConfig[] = [];
@@ -488,12 +490,9 @@ function createClient(
       config,
     };
   };
-  const client = new SardanapalAuthService({
-    apiBaseUrl: baseUrl,
-    adapter,
-    ...options,
-  });
-  return { client, calls };
+  const http = new SardanapalHttpClient({ apiBaseUrl: baseUrl, adapter });
+  const client = new SardanapalAuthService({ client: http, ...options });
+  return { client, http, calls };
 }
 
 interface MockResult {

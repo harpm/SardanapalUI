@@ -1,7 +1,12 @@
-import type { AxiosRequestConfig } from 'axios';
-import type { ClientOperation, EntityKey, IResponse } from '@harpm/sardanapal-client';
+import type {
+  ClientOperation,
+  EntityKey,
+  IResponse,
+  SardanapalHttpClient,
+  SardanapalRequestOptions,
+} from '@harpm/sardanapal-client';
 import type { Observable } from 'rxjs';
-import type { SardanapalAuthService } from '../auth/sardanapal-auth-service';
+import { SardanapalAuthService } from '../auth/sardanapal-auth-service';
 import type {
   ChangePasswordModel,
   ChangeUserPasswordModel,
@@ -33,7 +38,9 @@ export const defaultAccountEndpoints: AccountEndpointMap = {
 };
 
 export interface SardanapalAccountClientOptions {
-  /** Sends every call, so calls carry the `AUTH` header and share its HTTP client. */
+  /** The shared HTTP client. The auth interceptor on it attaches the `AUTH` header. */
+  client: SardanapalHttpClient;
+  /** Used for `setToken` after OTP login. Not used to send requests. */
   auth: SardanapalAuthService;
   /** Overrides applied on top of the default endpoint map. */
   endpoints?: Partial<AccountEndpointMap>;
@@ -55,6 +62,7 @@ export class SardanapalAccountClient<
   /** `resource` of the error context on every account and OTP call. */
   static readonly resource = 'account';
 
+  protected readonly client: SardanapalHttpClient;
   protected readonly auth: SardanapalAuthService;
   /** Defaults merged with the `endpoints` option. A subclass redeclares this with its wider map type. */
   protected readonly endpoints: AccountEndpointMap;
@@ -67,43 +75,43 @@ export class SardanapalAccountClient<
     options: SardanapalAccountClientOptions,
     defaults: AccountEndpointMap = defaultAccountEndpoints,
   ) {
+    if (!options.client) {
+      throw new Error('client is required.');
+    }
     if (!options.auth) {
       throw new Error('auth is required.');
     }
+    this.client = options.client;
     this.auth = options.auth;
     this.endpoints = this.mergeEndpoints(defaults, options.endpoints);
   }
 
   /** Sent with the `AUTH` header when a token is cached, so an admin can register users. */
   $register(model: TRegister): Observable<IResponse<TUserKey>> {
-    return this.$send<TUserKey>(
-      this.buildPath(this.endpoints.register),
-      { method: 'POST', data: model },
-      'register',
-    );
+    return this.client.$post<IResponse<TUserKey>>(this.buildPath(this.endpoints.register), {
+      body: model,
+      ...this.context('register'),
+    });
   }
 
   $getEditable(id: TUserKey): Observable<IResponse<TEditable>> {
-    return this.$send<TEditable>(
+    return this.client.$get<IResponse<TEditable>>(
       this.buildPath(this.endpoints.getEditable, id),
-      { method: 'GET' },
-      'getEditable',
+      this.context('getEditable'),
     );
   }
 
   $edit(id: TUserKey, model: TEditable): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(
-      this.buildPath(this.endpoints.edit, id),
-      { method: 'PUT', data: model },
-      'edit',
-    );
+    return this.client.$put<IResponse<boolean>>(this.buildPath(this.endpoints.edit, id), {
+      body: model,
+      ...this.context('edit'),
+    });
   }
 
   $delete(id: TUserKey): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(
+    return this.client.$delete<IResponse<boolean>>(
       this.buildPath(this.endpoints.delete, id),
-      { method: 'DELETE' },
-      'delete',
+      this.context('delete'),
     );
   }
 
@@ -114,41 +122,29 @@ export class SardanapalAccountClient<
    * carries `must_change_pw` afterwards, so log in again to get a fresh one.
    */
   $changePassword(model: ChangePasswordModel): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(
-      this.buildPath(this.endpoints.changePassword),
-      { method: 'POST', data: model, ...this.anonymous() },
-      'changePassword',
-    );
+    return this.client.$post<IResponse<boolean>>(this.buildPath(this.endpoints.changePassword), {
+      body: model,
+      ...this.context('changePassword'),
+      ...this.anonymous(),
+    });
   }
 
   /** Sets a password for a user id. Sent with the `AUTH` header, for an administrator. */
   $changeUserPassword(model: ChangeUserPasswordModel<TUserKey>): Observable<IResponse<boolean>> {
-    return this.$send<boolean>(
-      this.buildPath(this.endpoints.changeUserPassword),
-      { method: 'POST', data: model },
-      'changeUserPassword',
-    );
-  }
-
-  /**
-   * Sends the request and types the deserialized body as `IResponse<T>`. The call is
-   * tagged with the account resource and its operation, so a failure on
-   * `httpError$` can be told apart.
-   */
-  protected $send<T>(
-    path: string,
-    config: AxiosRequestConfig,
-    operation: ClientOperation,
-  ): Observable<IResponse<T>> {
-    return this.auth.$request<IResponse<T>>(path, {
-      ...config,
-      errorContext: { resource: SardanapalAccountClient.resource, operation },
+    return this.client.$post<IResponse<boolean>>(this.buildPath(this.endpoints.changeUserPassword), {
+      body: model,
+      ...this.context('changeUserPassword'),
     });
   }
 
-  /** Request options for a call that needs no token: no `AUTH` header and no refresh first. */
-  protected anonymous(): Pick<AxiosRequestConfig, 'skipAuth' | 'skipRefresh'> {
-    return { skipAuth: true, skipRefresh: true };
+  /** Error context for an account call, so a failure on `httpError$` names the operation. */
+  protected context(operation: ClientOperation): SardanapalRequestOptions {
+    return { errorContext: { resource: SardanapalAccountClient.resource, operation } };
+  }
+
+  /** Options for a call that needs no token: no `AUTH` header and no refresh first. */
+  protected anonymous(): SardanapalRequestOptions {
+    return SardanapalAuthService.anonymous;
   }
 
   /**

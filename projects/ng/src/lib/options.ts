@@ -9,8 +9,8 @@ export interface SardanapalNgOptions {
   apiBaseUrl: string;
   /** Extra options for the shared HTTP client. */
   http?: Pick<SardanapalHttpClientOptions, 'adapter' | 'errors'>;
-  /** Options for the auth service. It always uses the shared HTTP client. */
-  auth?: Omit<SardanapalAuthServiceOptions, 'apiBaseUrl' | 'client' | 'adapter'>;
+  /** Options for the auth service. It registers its interceptor on the shared HTTP client. */
+  auth?: Omit<SardanapalAuthServiceOptions, 'client'>;
   /** Options for the direction service. */
   direction?: SardanapalDirectionServiceOptions;
   /** Show every failed request as an ng-zorro toast. Defaults to `true`. */

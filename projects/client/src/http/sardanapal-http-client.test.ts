@@ -30,7 +30,31 @@ describe('http client', () => {
   it('returns the response body of a successful call', async () => {
     const client = createClient(() => ({ data: { ok: true } }));
 
-    expect(await firstValueFrom(client.$request('/orders'))).toEqual({ ok: true });
+    expect(await firstValueFrom(client.$get('/orders'))).toEqual({ ok: true });
+  });
+
+  it('maps $get, $post, $put and $delete to verb, query params, body and headers', async () => {
+    const seen: InternalAxiosRequestConfig[] = [];
+    const client = createClient((config) => {
+      seen.push(config);
+      return { data: { ok: true } };
+    });
+
+    await firstValueFrom(client.$get('/orders', { queryParams: { page: 2 }, headers: { 'X-A': '1' } }));
+    await firstValueFrom(client.$post('/orders', { queryParams: { page: 1 }, body: { name: 'a' }, headers: { 'X-B': '2' } }));
+    await firstValueFrom(client.$put('/orders/7', { body: { name: 'b' } }));
+    await firstValueFrom(client.$delete('/orders/7', { queryParams: { force: true } }));
+
+    expect(seen.map((config) => config.method)).toEqual(['get', 'post', 'put', 'delete']);
+    expect(seen.map((config) => config.url)).toEqual(['/orders', '/orders', '/orders/7', '/orders/7']);
+    expect(seen[0].params).toEqual({ page: 2 });
+    expect(seen[0].headers?.['X-A']).toBe('1');
+    expect(seen[1].params).toEqual({ page: 1 });
+    expect(seen[1].data).toBe(JSON.stringify({ name: 'a' }));
+    expect(seen[1].headers?.['X-B']).toBe('2');
+    expect(seen[2].data).toBe(JSON.stringify({ name: 'b' }));
+    expect(seen[3].params).toEqual({ force: true });
+    expect(seen[3].data).toBeUndefined();
   });
 
   it('rejects non-2xx responses and reports them on httpError$', async () => {
@@ -38,7 +62,7 @@ describe('http client', () => {
     const reported: SardanapalHttpError[] = [];
     client.httpError$.subscribe((error) => reported.push(error));
 
-    await expect(firstValueFrom(client.$request('/orders'))).rejects.toMatchObject({
+    await expect(firstValueFrom(client.$get('/orders'))).rejects.toMatchObject({
       status: 500,
       body: { message: 'boom' },
     });
@@ -52,7 +76,7 @@ describe('http client', () => {
       throw new Error('network down');
     });
 
-    await expect(firstValueFrom(client.$request('/orders'))).rejects.toMatchObject({
+    await expect(firstValueFrom(client.$get('/orders'))).rejects.toMatchObject({
       name: 'SardanapalHttpError',
       status: 0,
       message: 'network down',
@@ -79,7 +103,7 @@ describe('http client', () => {
       response: () => order.push('response:second'),
     });
 
-    await expect(firstValueFrom(client.$request('/orders'))).rejects.toMatchObject({ status: 418 });
+    await expect(firstValueFrom(client.$get('/orders'))).rejects.toMatchObject({ status: 418 });
 
     expect(order).toEqual([
       'request:first',
@@ -102,7 +126,7 @@ describe('http client', () => {
       },
     });
 
-    const error = await firstValueFrom(client.$request('/orders')).catch((e: unknown) => e);
+    const error = await firstValueFrom(client.$get('/orders')).catch((e: unknown) => e);
 
     expect(error).toMatchObject({ message: 'Unauthorized', status: 401 });
     expect(reported).toEqual([error]);
@@ -118,7 +142,7 @@ describe('http client', () => {
       },
     });
 
-    await expect(firstValueFrom(client.$request('/orders'))).rejects.toMatchObject({
+    await expect(firstValueFrom(client.$get('/orders'))).rejects.toMatchObject({
       name: 'SardanapalHttpError',
       status: 0,
       message: 'no token',
@@ -134,8 +158,8 @@ describe('http client', () => {
     const statuses: number[] = [];
     errors.error$.subscribe((error) => statuses.push(error.status));
 
-    await firstValueFrom(first.$request('/a')).catch(() => undefined);
-    await firstValueFrom(second.$request('/b')).catch(() => undefined);
+    await firstValueFrom(first.$get('/a')).catch(() => undefined);
+    await firstValueFrom(second.$get('/b')).catch(() => undefined);
 
     expect(first.errors).toBe(errors);
     expect(first.httpError$).toBe(errors.error$);
@@ -149,7 +173,7 @@ describe('http client', () => {
 
     await firstValueFrom(client.$request('/orders', { errorContext: { resource: 'orders', operation: 'getAll' } }))
       .catch(() => undefined);
-    await firstValueFrom(client.$request('/other')).catch(() => undefined);
+    await firstValueFrom(client.$get('/other')).catch(() => undefined);
 
     expect(reported[0]).toMatchObject({ resource: 'orders', operation: 'getAll' });
     expect(reported[1].resource).toBeUndefined();

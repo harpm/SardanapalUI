@@ -1,37 +1,24 @@
 import {
-  AxiosHeaders,
-  type AxiosAdapter,
-  type AxiosRequestConfig,
-  type AxiosResponse,
-  type InternalAxiosRequestConfig,
-} from 'axios';
-import {
   Response,
   SardanapalHttpClient,
   SardanapalHttpError,
-  MemoryStorage,
   type IResponse,
   type KeyValueStorage,
+  type SardanapalRequestOptions,
 } from '@harpm/sardanapal-client';
+import { AxiosHeaders, type AxiosResponse } from 'axios';
 import {
   BehaviorSubject,
   defer,
   finalize,
-  firstValueFrom,
-  from,
   map,
   share,
   throwError,
   type Observable,
 } from 'rxjs';
 import { SardanapalJwtService, type AuthClaims } from '../jwt/sardanapal-jwt-service';
-
-declare module 'axios' {
-  interface AxiosRequestConfig {
-    skipAuth?: boolean;
-    skipRefresh?: boolean;
-  }
-}
+import { SardanapalAuthInterceptor } from './sardanapal-auth-interceptor';
+import { SardanapalTokenStore } from './sardanapal-token-store';
 
 export interface LoginData {
   token: string;
@@ -49,13 +36,8 @@ export interface EndpointMap {
 }
 
 export interface SardanapalAuthServiceOptions {
-  /** Required unless `client` is supplied. */
-  apiBaseUrl?: string;
-  /**
-   * Share an existing HTTP client, so Core CRUD/panel calls made through it
-   * carry the same `AUTH` header. Omit to create a private one.
-   */
-  client?: SardanapalHttpClient;
+  /** The shared HTTP client. The auth service registers its interceptor on it. */
+  client: SardanapalHttpClient;
   endpoints?: Partial<EndpointMap>;
   /**
    * Minutes before `exp` when a configured refresh URL is called.
@@ -67,8 +49,6 @@ export interface SardanapalAuthServiceOptions {
   /** `true` uses the default refresh path. A string overrides that path. Omit to rely on the `AUTH` response header only. */
   refreshUrl?: boolean | string;
   tokenStorage?: KeyValueStorage;
-  /** Only used when no `client` is supplied. */
-  adapter?: AxiosAdapter;
 }
 
 const defaultEndpoints: EndpointMap = {
@@ -76,54 +56,57 @@ const defaultEndpoints: EndpointMap = {
   refresh: 'account/refresh',
 };
 
+/**
+ * Owns authentication: login, refresh, the token cache, the session and the
+ * password-change state. The HTTP transport stays on the shared
+ * `SardanapalHttpClient`. The constructor registers a `SardanapalAuthInterceptor`
+ * on that client, which calls back into this service for every decision.
+ */
 export class SardanapalAuthService {
-  private static readonly AUTH_HEADER_NAME = 'AUTH';
-  private static readonly PASSWORD_CHANGE_MESSAGE = 'Password change required.';
-  private static readonly TOKEN_STORAGE_KEY = 'sardanapal.auth.token';
+  /** Options for a call that sends no token and skips the refresh. Pass as the last argument of a typed HTTP call. */
+  static readonly anonymous: SardanapalRequestOptions = Object.freeze({ skipAuth: true, skipRefresh: true });
 
-  private readonly jwt = new SardanapalJwtService();
+  private static readonly PASSWORD_CHANGE_MESSAGE = 'Password change required.';
+  private static readonly REFRESH_THRESHOLD_MINUTES = 10;
 
   readonly session$: Observable<Session>;
-  readonly httpError$: Observable<SardanapalHttpError>;
+
   private readonly client: SardanapalHttpClient;
   private readonly endpoints: EndpointMap;
-  private readonly storage: KeyValueStorage;
+  private readonly store: SardanapalTokenStore;
+  private readonly jwt = new SardanapalJwtService();
+  private readonly refreshUrl: string | null;
   private readonly refreshThresholdMinutes: number;
-  private readonly refreshUrlOption: boolean | string | undefined;
   private readonly sessionSubject$: BehaviorSubject<Session>;
-  private passwordChangeRequired = false;
   private refreshInFlight$: Observable<IResponse<string>> | null = null;
+  private passwordChangeRequired = false;
   private publishedKey = '';
 
   constructor(options: SardanapalAuthServiceOptions) {
-    this.client = options.client ?? new SardanapalHttpClient({
-      apiBaseUrl: options.apiBaseUrl ?? '',
-      adapter: options.adapter,
-    });
-    this.httpError$ = this.client.httpError$;
+    if (!options?.client) {
+      throw new Error('client is required.');
+    }
+
+    this.client = options.client;
     this.endpoints = { ...defaultEndpoints, ...options.endpoints };
-    this.storage = options.tokenStorage ?? new MemoryStorage();
-    this.refreshThresholdMinutes = options.refreshThresholdMinutes ?? 10;
-    this.refreshUrlOption = options.refreshUrl;
+    this.store = new SardanapalTokenStore(options.tokenStorage);
+    this.refreshUrl = this.resolveRefreshUrl(options.refreshUrl);
+    this.refreshThresholdMinutes = options.refreshThresholdMinutes ?? SardanapalAuthService.REFRESH_THRESHOLD_MINUTES;
 
     const initial = this.getSession();
     this.publishedKey = this.sessionKey(initial);
     this.sessionSubject$ = new BehaviorSubject(initial);
     this.session$ = this.sessionSubject$.asObservable();
 
-    this.client.use({
-      request: (config) => this.beforeRequest(config),
-      response: (response) => this.afterResponse(response),
-    });
+    this.client.use(new SardanapalAuthInterceptor(this));
   }
 
   $login(username: string, password: string): Observable<IResponse<LoginData>> {
-    return defer(() => from(this.client.http.post(
-      this.endpoints.login,
-      { username, password },
-      { skipAuth: true, skipRefresh: true },
-    ))).pipe(
-      map(({ data }) => {
+    return this.client.$post<unknown>(this.endpoints.login, {
+      body: { username, password },
+      ...SardanapalAuthService.anonymous,
+    }).pipe(
+      map((data) => {
         const result = Response.from<LoginData>(data);
         if (result.isSuccess && result.data?.token) {
           this.storeToken(result.data.token);
@@ -144,32 +127,27 @@ export class SardanapalAuthService {
     this.storeToken(token);
   }
 
+  /** Runs one refresh at a time. Parallel callers share the in-flight call. */
   $refresh(): Observable<IResponse<string>> {
     if (!this.refreshInFlight$) {
       this.refreshInFlight$ = this.performRefresh().pipe(
         finalize(() => {
           this.refreshInFlight$ = null;
         }),
-        share({
-          resetOnError: true,
-          resetOnComplete: true,
-          resetOnRefCountZero: false,
-        }),
+        share({ resetOnError: true, resetOnComplete: true, resetOnRefCountZero: false }),
       );
     }
     return this.refreshInFlight$;
   }
 
-  $request<T = unknown>(path: string, config?: AxiosRequestConfig): Observable<T> {
-    return this.client.$request<T>(path, config);
-  }
-
   logout(): void {
-    this.clearToken();
+    this.store.clear();
+    this.passwordChangeRequired = false;
+    this.publish();
   }
 
   getSession(): Session {
-    const token = this.readToken();
+    const token = this.store.read();
     const claims = token ? this.jwt.decode(token) : null;
     return {
       token,
@@ -178,35 +156,40 @@ export class SardanapalAuthService {
     };
   }
 
-  private async beforeRequest(config: InternalAxiosRequestConfig): Promise<void> {
-    if (!config.skipRefresh && this.shouldRefresh(this.getSession().claims)) {
-      await firstValueFrom(this.$refresh());
-    }
-
-    config.headers.delete('Authorization');
-    if (!config.skipAuth) {
-      const token = this.readToken();
-      if (token) {
-        config.headers.set(SardanapalAuthService.AUTH_HEADER_NAME, token);
-      }
-    }
+  /** Called by the interceptor: the cached token to attach as `AUTH`, or `null`. */
+  currentToken(): string | null {
+    return this.store.read();
   }
 
-  private afterResponse(response: AxiosResponse): void {
-    const status = response.status;
-    if (status !== 401) {
-      const refreshed = this.getAuthToken(response);
+  /** Called by the interceptor before each request: true when a refresh should run first. */
+  shouldRefresh(): boolean {
+    const claims = this.getSession().claims;
+    if (this.refreshThresholdMinutes <= 0 || !this.refreshUrl || claims?.exp == null) {
+      return false;
+    }
+    const remainingMs = claims.exp * 1000 - Date.now();
+    return remainingMs <= this.refreshThresholdMinutes * 60 * 1000;
+  }
+
+  /**
+   * Called by the interceptor for every response. Applies a sliding `AUTH` header,
+   * clears the token on 401, and flags the password-change 403. It throws the
+   * matching `SardanapalHttpError`, which the HTTP client then reports.
+   */
+  handleResponse(response: AxiosResponse): void {
+    if (response.status !== 401) {
+      const refreshed = this.authHeader(response);
       if (refreshed) {
         this.storeToken(refreshed);
       }
     }
 
-    if (status === 401) {
-      this.clearToken();
+    if (response.status === 401) {
+      this.logout();
       throw new SardanapalHttpError('Unauthorized', 401, response.data);
     }
 
-    if (status === 403 && this.isPasswordChangeBody(response.data)) {
+    if (response.status === 403 && this.isPasswordChangeBody(response.data)) {
       this.passwordChangeRequired = true;
       this.publish();
       throw new SardanapalHttpError(SardanapalAuthService.PASSWORD_CHANGE_MESSAGE, 403, response.data, true);
@@ -215,8 +198,7 @@ export class SardanapalAuthService {
 
   private performRefresh(): Observable<IResponse<string>> {
     return defer(() => {
-      const url = this.configuredRefreshUrl();
-      if (!url) {
+      if (!this.refreshUrl) {
         return throwError(() => new Error('Refresh URL is not configured.'));
       }
 
@@ -225,8 +207,8 @@ export class SardanapalAuthService {
         return throwError(() => new Error('Cannot refresh without a user id.'));
       }
 
-      return from(this.client.http.post(url, { userId }, { skipRefresh: true })).pipe(
-        map(({ data }) => {
+      return this.client.$post<unknown>(this.refreshUrl, { body: { userId }, skipRefresh: true }).pipe(
+        map((data) => {
           const envelope = Response.from<string>(data);
           if (envelope.isSuccess && typeof envelope.data === 'string' && envelope.data) {
             this.storeToken(envelope.data);
@@ -237,19 +219,10 @@ export class SardanapalAuthService {
     });
   }
 
-  private configuredRefreshUrl(): string | null {
-    if (this.refreshUrlOption === true) {
-      return this.client.resolveUrl(this.endpoints.refresh);
-    }
-    if (typeof this.refreshUrlOption === 'string' && this.refreshUrlOption.trim()) {
-      return this.client.resolveUrl(this.refreshUrlOption.trim());
-    }
-    return null;
-  }
-
-  private readToken(): string | null {
-    const token = this.storage.get(SardanapalAuthService.TOKEN_STORAGE_KEY);
-    return token && token.trim() ? token : null;
+  private storeToken(token: string): void {
+    this.store.write(token);
+    this.passwordChangeRequired = this.jwt.decode(token)?.mustChangePassword ?? false;
+    this.publish();
   }
 
   private publish(): void {
@@ -266,29 +239,8 @@ export class SardanapalAuthService {
     return `${session.token ?? ''}|${session.mustChangePassword}`;
   }
 
-  private storeToken(token: string): void {
-    this.storage.set(SardanapalAuthService.TOKEN_STORAGE_KEY, token);
-    const claims = this.jwt.decode(token);
-    this.passwordChangeRequired = claims?.mustChangePassword ?? false;
-    this.publish();
-  }
-
-  private clearToken(): void {
-    this.storage.remove(SardanapalAuthService.TOKEN_STORAGE_KEY);
-    this.passwordChangeRequired = false;
-    this.publish();
-  }
-
-  private shouldRefresh(claims: AuthClaims | null): boolean {
-    if (this.refreshThresholdMinutes <= 0 || !this.configuredRefreshUrl() || claims?.exp == null) {
-      return false;
-    }
-    const remainingMs = claims.exp * 1000 - Date.now();
-    return remainingMs <= this.refreshThresholdMinutes * 60 * 1000;
-  }
-
-  private getAuthToken(response: AxiosResponse): string | null {
-    const value = AxiosHeaders.from(response.headers as AxiosHeaders).get(SardanapalAuthService.AUTH_HEADER_NAME);
+  private authHeader(response: AxiosResponse): string | null {
+    const value = AxiosHeaders.from(response.headers as AxiosHeaders).get(SardanapalAuthInterceptor.AUTH_HEADER_NAME);
     return typeof value === 'string' ? value : null;
   }
 
@@ -297,5 +249,15 @@ export class SardanapalAuthService {
       return false;
     }
     return (body as { message?: unknown }).message === SardanapalAuthService.PASSWORD_CHANGE_MESSAGE;
+  }
+
+  private resolveRefreshUrl(option: boolean | string | undefined): string | null {
+    if (option === true) {
+      return this.client.resolveUrl(this.endpoints.refresh);
+    }
+    if (typeof option === 'string' && option.trim()) {
+      return this.client.resolveUrl(option.trim());
+    }
+    return null;
   }
 }

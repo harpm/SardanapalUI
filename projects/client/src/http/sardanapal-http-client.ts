@@ -5,6 +5,7 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
+  type Method,
 } from 'axios';
 import { defer, from, map, type Observable } from 'rxjs';
 import { SardanapalErrorChannel, SardanapalHttpError } from '../errors/sardanapal-http-error';
@@ -25,6 +26,35 @@ export interface SardanapalHttpInterceptor {
    * (or text) when this runs.
    */
   response?(response: AxiosResponse): void;
+}
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Read by interceptors. When true, the auth interceptor attaches no `AUTH` header. */
+    skipAuth?: boolean;
+    /** Read by interceptors. When true, the auth interceptor does not refresh first. */
+    skipRefresh?: boolean;
+  }
+}
+
+export type QueryParams = Record<string, unknown>;
+
+export type RequestHeaders = Record<string, string>;
+
+/** Per-request options for the typed methods. Fields are read by the client and its interceptors. */
+export type SardanapalRequestOptions = Pick<
+  AxiosRequestConfig,
+  'errorContext' | 'responseType' | 'skipAuth' | 'skipRefresh'
+>;
+
+/**
+ * Everything a typed call can carry. All fields are optional. `body` is sent
+ * by `$post` and `$put`. `$get` and `$delete` ignore it.
+ */
+export interface SardanapalCallOptions extends SardanapalRequestOptions {
+  queryParams?: QueryParams;
+  headers?: RequestHeaders;
+  body?: unknown;
 }
 
 export interface SardanapalHttpClientOptions {
@@ -97,6 +127,36 @@ export class SardanapalHttpClient {
     this.interceptors.push(interceptor);
   }
 
+  /** GET `path`. Every field of `options` is optional. */
+  $get<T = unknown>(path: string, options: SardanapalCallOptions = {}): Observable<T> {
+    return this.$request<T>(path, this.toConfig('GET', options));
+  }
+
+  /** POST `options.body` to `path`. Every field of `options` is optional. */
+  $post<T = unknown>(path: string, options: SardanapalCallOptions = {}): Observable<T> {
+    return this.$request<T>(path, this.toConfig('POST', options));
+  }
+
+  /** PUT `options.body` to `path`. Every field of `options` is optional. */
+  $put<T = unknown>(path: string, options: SardanapalCallOptions = {}): Observable<T> {
+    return this.$request<T>(path, this.toConfig('PUT', options));
+  }
+
+  /** DELETE `path`. Every field of `options` is optional. */
+  $delete<T = unknown>(path: string, options: SardanapalCallOptions = {}): Observable<T> {
+    return this.$request<T>(path, this.toConfig('DELETE', options));
+  }
+
+  /** Maps the typed call options to an axios config for a fixed verb. */
+  private toConfig(method: Method, options: SardanapalCallOptions): AxiosRequestConfig {
+    const { queryParams, headers, body, ...request } = options;
+    return { ...request, method, params: queryParams, headers, data: body };
+  }
+
+  /**
+   * Raw invoker that takes the full axios config. Application code uses the typed
+   * methods; this is the escape hatch for options they do not cover.
+   */
   $request<T = unknown>(path: string, config?: AxiosRequestConfig): Observable<T> {
     return defer(() => from(this.http.request<T>({ ...config, url: path }))).pipe(
       map((response) => response.data),

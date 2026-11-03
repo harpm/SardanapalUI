@@ -16,26 +16,10 @@ import { FormsModule } from '@angular/forms';
 import { SardanapalAccountClient, type Session } from '@harpm/sardanapal-identity-client';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { catchError, finalize, of, switchMap, tap, type Observable } from 'rxjs';
+import { SardanapalChangePasswordModel, type SardanapalChangePasswordLabels } from '../../models/models';
 import { SARDANAPAL_AUTH_SERVICE, SARDANAPAL_HTTP_CLIENT } from '../../tokens';
 import { SardanapalPasswordComponent } from '../password/password.component';
 import { SardanapalTextBoxComponent } from '../text-box/text-box.component';
-
-/** English defaults; a host replaces any key to localize the form. */
-export interface SardanapalChangePasswordLabels {
-  username?: string;
-  oldPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-  submit?: string;
-}
-
-/** Fields the change-password form edits through two-way binding. */
-export class SardanapalChangePasswordModel {
-  username = '';
-  oldPassword = '';
-  newPassword = '';
-  confirmPassword = '';
-}
 
 /**
  * Change-password form. It calls `$changePassword`, then `logout()` and `$login`

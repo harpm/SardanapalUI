@@ -2,6 +2,7 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, Input } from '@an
 import { FormsModule } from '@angular/forms';
 import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { SardanapalControlBase } from '../../control-base';
+import { SardanapalControlSize } from '../../types/types';
 
 /** A number, or `null` when empty. Works with `ngModel`, `formControl` and `formControlName`. */
 @Component({
@@ -21,5 +22,5 @@ export class SardanapalNumericComponent extends SardanapalControlBase<number> {
   @Input() precision: number | null = null;
   @Input() placeholder = '';
   @Input({ transform: booleanAttribute }) readonly = false;
-  @Input() size: 'large' | 'default' | 'small' = 'default';
+  @Input() size = SardanapalControlSize.Default;
 }

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   MemoryStorage,
   SardanapalDirectionService,
+  TextDirection,
   type DirectionTarget,
-  type TextDirection,
 } from '../index';
 
 class FakeTarget implements DirectionTarget {
@@ -36,7 +36,7 @@ describe('SardanapalDirectionService', () => {
   it('uses the default direction when nothing is saved', () => {
     const kit = new DirectionTestKit();
 
-    const service = kit.create('rtl');
+    const service = kit.create(TextDirection.Rtl);
 
     expect(service.getDirection()).toBe('rtl');
     expect(kit.target.documentElement.dir).toBe('rtl');
@@ -46,18 +46,18 @@ describe('SardanapalDirectionService', () => {
     const kit = new DirectionTestKit();
     const service = kit.create();
 
-    service.setDirection('rtl');
+    service.setDirection(TextDirection.Rtl);
     expect(kit.target.documentElement.dir).toBe('rtl');
 
-    service.setDirection('ltr');
+    service.setDirection(TextDirection.Ltr);
     expect(kit.target.documentElement.dir).toBe('ltr');
   });
 
   it('persists the direction and restores it, ignoring the default', () => {
     const kit = new DirectionTestKit();
-    kit.create().setDirection('rtl');
+    kit.create().setDirection(TextDirection.Rtl);
 
-    const restored = kit.create('ltr');
+    const restored = kit.create(TextDirection.Ltr);
 
     expect(restored.getDirection()).toBe('rtl');
     expect(kit.target.documentElement.dir).toBe('rtl');
@@ -67,7 +67,7 @@ describe('SardanapalDirectionService', () => {
     const kit = new DirectionTestKit();
     kit.storage.set('sardanapal.direction', 'sideways');
 
-    expect(kit.create('rtl').getDirection()).toBe('rtl');
+    expect(kit.create(TextDirection.Rtl).getDirection()).toBe('rtl');
   });
 
   it('emits directionChanged$ only when the direction changes', () => {
@@ -75,17 +75,17 @@ describe('SardanapalDirectionService', () => {
     const seen: TextDirection[] = [];
     service.directionChanged$.subscribe((direction) => seen.push(direction));
 
-    service.setDirection('ltr');
-    service.setDirection('rtl');
-    service.setDirection('rtl');
-    service.setDirection('ltr');
+    service.setDirection(TextDirection.Ltr);
+    service.setDirection(TextDirection.Rtl);
+    service.setDirection(TextDirection.Rtl);
+    service.setDirection(TextDirection.Ltr);
 
     expect(seen).toEqual(['rtl', 'ltr']);
   });
 
   it('does not emit on construction or replay to a late subscriber', () => {
     const kit = new DirectionTestKit();
-    const service = kit.create('rtl');
+    const service = kit.create(TextDirection.Rtl);
     const seen: TextDirection[] = [];
 
     service.directionChanged$.subscribe((direction) => seen.push(direction));
@@ -101,7 +101,7 @@ describe('SardanapalDirectionService', () => {
     service.directionChanged$.subscribe((direction) => one.push(direction));
     service.directionChanged$.subscribe((direction) => two.push(direction));
 
-    service.setDirection('rtl');
+    service.setDirection(TextDirection.Rtl);
 
     expect(one).toEqual(['rtl']);
     expect(two).toEqual(['rtl']);
@@ -124,7 +124,7 @@ describe('SardanapalDirectionService', () => {
   it('works without a target', () => {
     const service = new SardanapalDirectionService({ target: null });
 
-    service.setDirection('rtl');
+    service.setDirection(TextDirection.Rtl);
 
     expect(service.getDirection()).toBe('rtl');
   });
@@ -135,7 +135,7 @@ describe('SardanapalDirectionService', () => {
     const fake = new FakeTarget();
     globals.document = fake;
     try {
-      new SardanapalDirectionService().setDirection('rtl');
+      new SardanapalDirectionService().setDirection(TextDirection.Rtl);
       expect(fake.documentElement.dir).toBe('rtl');
     } finally {
       globals.document = previous;

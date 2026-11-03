@@ -5,6 +5,7 @@ import {
   SardanapalErrorChannel,
   SardanapalHttpClient,
   SardanapalHttpError,
+  TextDirection,
 } from '@harpm/sardanapal-client';
 import { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 import { NzMessageService } from 'ng-zorro-antd/message';
@@ -96,7 +97,7 @@ describe('SardanapalNg.providers', () => {
   });
 
   it('provides the direction service with its options', () => {
-    NgTestKit.configure({ direction: { target: null, defaultDirection: 'rtl' } });
+    NgTestKit.configure({ direction: { target: null, defaultDirection: TextDirection.Rtl } });
 
     expect(TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).getDirection()).toBe('rtl');
   });
@@ -106,7 +107,7 @@ describe('SardanapalNgDirectionBridge', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('starts with the current direction', () => {
-    NgTestKit.configure({ direction: { target: null, defaultDirection: 'rtl' } });
+    NgTestKit.configure({ direction: { target: null, defaultDirection: TextDirection.Rtl } });
 
     expect(TestBed.inject(Directionality).value).toBe('rtl');
   });
@@ -117,9 +118,9 @@ describe('SardanapalNgDirectionBridge', () => {
     const seen: Direction[] = [];
     directionality.change.subscribe((direction) => seen.push(direction));
 
-    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection('rtl');
-    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection('rtl');
-    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection('ltr');
+    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection(TextDirection.Rtl);
+    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection(TextDirection.Rtl);
+    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection(TextDirection.Ltr);
 
     expect(directionality.value).toBe('ltr');
     expect(seen).toEqual(['rtl', 'ltr']);
@@ -184,7 +185,7 @@ describe('SardanapalNgLocaleService', () => {
   });
 
   it('sets the ng-zorro locale and lang, and leaves direction alone', () => {
-    NgTestKit.configure({ direction: { target: null, defaultDirection: 'ltr' } });
+    NgTestKit.configure({ direction: { target: null, defaultDirection: TextDirection.Ltr } });
     const service = TestBed.inject(SardanapalNgLocaleService);
 
     service.setCulture(' fa-IR ');

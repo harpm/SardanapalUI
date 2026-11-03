@@ -1,11 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { GridSearchModelFactory, Response, type GridResult, type SelectOption } from '@harpm/sardanapal-client';
+import { GridSearchModelFactory, Response, TextDirection, type GridResult, type SelectOption } from '@harpm/sardanapal-client';
 import type { Session } from '@harpm/sardanapal-identity-client';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { of } from 'rxjs';
 import {
   SARDANAPAL_DIRECTION_SERVICE,
+  SardanapalAlign,
   SardanapalChangePasswordComponent,
   SardanapalCheckboxComponent,
   SardanapalDateComponent,
@@ -99,7 +100,7 @@ export class AppComponent {
   protected readonly people = DemoPeople.source;
   protected readonly columns: SardanapalGridColumn<Person>[] = [
     { field: 'name', title: 'Name', sortable: true },
-    { field: 'age', title: 'Age', sortable: true, align: 'right' },
+    { field: 'age', title: 'Age', sortable: true, align: SardanapalAlign.Right },
   ];
   protected readonly Placement = SardanapalLoginPlacement;
   protected loginPlacement = SardanapalLoginPlacement.Middle;
@@ -116,11 +117,11 @@ export class AppComponent {
   /** Language and direction are separate services, so the app sets both. */
   protected useEnglish(): void {
     this.locale.setCulture('en');
-    this.direction.setDirection('ltr');
+    this.direction.setDirection(TextDirection.Ltr);
   }
 
   protected usePersian(): void {
     this.locale.setCulture('fa-IR');
-    this.direction.setDirection('rtl');
+    this.direction.setDirection(TextDirection.Rtl);
   }
 }

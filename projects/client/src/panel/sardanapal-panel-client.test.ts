@@ -2,6 +2,7 @@ import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestC
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {
+  ExcelResponseType,
   SardanapalCrudClient,
   SardanapalHttpClient,
   SardanapalHttpError,
@@ -92,7 +93,7 @@ describe('panel client', () => {
     const { client, calls } = createClient(() => ({ data: new Blob(['x']) }));
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
 
-    const result = await firstValueFrom(panel.$getExcel(null, { responseType: 'blob' }));
+    const result = await firstValueFrom(panel.$getExcel(null, { responseType: ExcelResponseType.Blob }));
 
     expect(calls[0].responseType).toBe('blob');
     expect(result).toBeInstanceOf(Blob);
@@ -103,7 +104,7 @@ describe('panel client', () => {
     const { client } = createClient(() => ({ data: blob, status: 502 }));
     const panel = new SardanapalPanelClient({ client, resource: 'orders' });
 
-    const error = await firstValueFrom(panel.$getExcel(null, { responseType: 'blob' })).catch((e: unknown) => e);
+    const error = await firstValueFrom(panel.$getExcel(null, { responseType: ExcelResponseType.Blob })).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(SardanapalHttpError);
     expect(error).toMatchObject({ status: 502 });

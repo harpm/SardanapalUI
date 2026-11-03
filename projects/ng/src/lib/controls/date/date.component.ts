@@ -2,6 +2,7 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, Input } from '@an
 import { FormsModule } from '@angular/forms';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { SardanapalControlBase } from '../../control-base';
+import { SardanapalControlSize } from '../../types/types';
 
 /** A `Date`, or `null` when empty. Works with `ngModel`, `formControl` and `formControlName`. */
 @Component({
@@ -17,7 +18,7 @@ export class SardanapalDateComponent extends SardanapalControlBase<Date> {
   @Input({ transform: booleanAttribute }) showTime = false;
   @Input({ transform: booleanAttribute }) allowClear = true;
   @Input({ transform: booleanAttribute }) readonly = false;
-  @Input() size: 'large' | 'default' | 'small' = 'default';
+  @Input() size = SardanapalControlSize.Default;
   /** Dates for which this returns true cannot be chosen. */
   @Input() disabledDate: ((date: Date) => boolean) | null = null;
 

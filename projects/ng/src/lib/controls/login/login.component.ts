@@ -24,46 +24,15 @@ import {
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { catchError, finalize, of, switchMap, tap, type Observable } from 'rxjs';
+import { SardanapalLoginModel, type SardanapalLoginLabels } from '../../models/models';
+import {
+  SardanapalLoginMethod,
+  SardanapalLoginOtpStep,
+  SardanapalLoginPlacement,
+} from '../../types/types';
 import { SardanapalCheckboxComponent } from '../checkbox/checkbox.component';
 import { SardanapalPasswordComponent } from '../password/password.component';
 import { SardanapalTextBoxComponent } from '../text-box/text-box.component';
-
-export enum SardanapalLoginPlacement {
-  Left = 'left',
-  Middle = 'middle',
-  Right = 'right',
-}
-
-export enum SardanapalLoginMethod {
-  Password = 'password',
-  Email = 'email',
-  Phone = 'phone',
-}
-
-/** Fields the login card edits through two-way binding. */
-export class SardanapalLoginModel {
-  username = '';
-  password = '';
-  email = '';
-  phone = '';
-  code = '';
-  rememberMe = false;
-}
-
-/** English defaults; a host replaces any key to localize the card. */
-export interface SardanapalLoginLabels {
-  username?: string;
-  password?: string;
-  email?: string;
-  phone?: string;
-  code?: string;
-  rememberMe?: string;
-  signIn?: string;
-  sendCode?: string;
-  passwordTab?: string;
-  emailTab?: string;
-  phoneTab?: string;
-}
 
 /**
  * Full-page login card: password, email OTP and phone OTP. It stores the token
@@ -114,13 +83,14 @@ export class SardanapalLoginComponent implements OnChanges {
 
   protected readonly Placement = SardanapalLoginPlacement;
   protected readonly Method = SardanapalLoginMethod;
+  protected readonly OtpStep = SardanapalLoginOtpStep;
   protected readonly methods = signal<SardanapalLoginMethod[]>([
     SardanapalLoginMethod.Password,
     SardanapalLoginMethod.Email,
     SardanapalLoginMethod.Phone,
   ]);
   protected readonly activeMethod = signal(SardanapalLoginMethod.Password);
-  protected readonly otpStep = signal<'request' | 'code'>('request');
+  protected readonly otpStep = signal(SardanapalLoginOtpStep.Request);
   protected readonly loading = signal(false);
   protected readonly userMessage = signal('');
   protected readonly model = new SardanapalLoginModel();
@@ -254,7 +224,7 @@ export class SardanapalLoginComponent implements OnChanges {
       return;
     }
     this.otpUserId = result.data;
-    this.otpStep.set('code');
+    this.otpStep.set(SardanapalLoginOtpStep.Code);
   }
 
   private afterAuth(result: IResponse<unknown>): void {
@@ -317,7 +287,7 @@ export class SardanapalLoginComponent implements OnChanges {
   }
 
   private resetOtpStep(): void {
-    this.otpStep.set('request');
+    this.otpStep.set(SardanapalLoginOtpStep.Request);
     this.otpUserId = null;
     this.model.code = '';
   }

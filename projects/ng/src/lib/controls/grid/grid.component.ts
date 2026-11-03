@@ -20,21 +20,9 @@ import {
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzTableModule, type NzTableSortOrder } from 'ng-zorro-antd/table';
 import { catchError, finalize, map, of, Subject, switchMap, tap, type Observable } from 'rxjs';
+import type { SardanapalGridColumn } from '../../models/models';
+import { SardanapalGridSize } from '../../types/types';
 import type { SardanapalGridSource } from '../sources';
-
-/** One column of `s-grid`. */
-export interface SardanapalGridColumn<TItem = unknown> {
-  /** Property of the row. A dotted path such as `customer.name` reads nested values. Also sent as `sortId`. */
-  field: string;
-  title: string;
-  /** Lets the user sort by this column. The host sorts by the `field` name. */
-  sortable?: boolean;
-  /** Any CSS width, for example `120px`. */
-  width?: string;
-  align?: 'left' | 'center' | 'right';
-  /** Turns the cell value into text. Without it, `null` is empty, dates use the local format, and everything else is `String(value)`. */
-  format?: (value: unknown, row: TItem) => string;
-}
 
 /**
  * A page of rows from a CRUD or panel client, with paging and sorting done by
@@ -65,7 +53,7 @@ export class SardanapalGridComponent<TItem extends object = Record<string, unkno
   @Input() pageSize = DEFAULT_PAGE_SIZE;
   @Input() pageSizeOptions: number[] = [10, 25, 50, 100];
   @Input({ transform: booleanAttribute }) showSizeChanger = true;
-  @Input() size: 'small' | 'middle' | 'default' = 'default';
+  @Input() size = SardanapalGridSize.Default;
   /** Property that identifies a row, used to track rows between pages. */
   @Input() rowKey = 'id';
   /** Property to sort by at first. */

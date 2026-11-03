@@ -20,18 +20,26 @@ export { SardanapalDateComponent } from './lib/controls/date/date.component';
 export { SardanapalCheckboxComponent } from './lib/controls/checkbox/checkbox.component';
 export { SardanapalSwitchComponent } from './lib/controls/switch/switch.component';
 export { SardanapalPasswordComponent } from './lib/controls/password/password.component';
-export {
-  SardanapalChangePasswordComponent,
-  SardanapalChangePasswordModel,
-} from './lib/controls/change-password/change-password.component';
-export type { SardanapalChangePasswordLabels } from './lib/controls/change-password/change-password.component';
+export { SardanapalChangePasswordComponent } from './lib/controls/change-password/change-password.component';
 export { SardanapalGridComponent } from './lib/controls/grid/grid.component';
-export type { SardanapalGridColumn } from './lib/controls/grid/grid.component';
+export { SardanapalLoginComponent } from './lib/controls/login/login.component';
 export {
-  SardanapalLoginComponent,
+  SardanapalAlign,
+  SardanapalControlSize,
+  SardanapalControlStatus,
+  SardanapalGridSize,
   SardanapalLoginMethod,
-  SardanapalLoginModel,
+  SardanapalLoginOtpStep,
   SardanapalLoginPlacement,
-} from './lib/controls/login/login.component';
-export type { SardanapalLoginLabels } from './lib/controls/login/login.component';
+  SardanapalTextType,
+} from './lib/types/types';
+export {
+  SardanapalChangePasswordModel,
+  SardanapalLoginModel,
+} from './lib/models/models';
+export type {
+  SardanapalChangePasswordLabels,
+  SardanapalGridColumn,
+  SardanapalLoginLabels,
+} from './lib/models/models';
 export type { SardanapalDictionarySource, SardanapalGridSource } from './lib/controls/sources';

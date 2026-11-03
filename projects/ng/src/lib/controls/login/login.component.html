@@ -90,7 +90,7 @@
     [(ngModel)]="model.email"
     [ngModelOptions]="{ standalone: true }"
     [placeholder]="label('email')"
-    [readonly]="otpStep() === 'code'"
+    [readonly]="otpStep() === OtpStep.Code"
   />
   <s-checkbox
     class="s-login-field"
@@ -98,7 +98,7 @@
     [ngModelOptions]="{ standalone: true }"
     [label]="label('rememberMe')"
   />
-  @if (otpStep() === 'request') {
+  @if (otpStep() === OtpStep.Request) {
     <div class="s-login-actions">
       <button
         nz-button
@@ -141,7 +141,7 @@
     [(ngModel)]="model.phone"
     [ngModelOptions]="{ standalone: true }"
     [placeholder]="label('phone')"
-    [readonly]="otpStep() === 'code'"
+    [readonly]="otpStep() === OtpStep.Code"
   />
   <s-checkbox
     class="s-login-field"
@@ -149,7 +149,7 @@
     [ngModelOptions]="{ standalone: true }"
     [label]="label('rememberMe')"
   />
-  @if (otpStep() === 'request') {
+  @if (otpStep() === OtpStep.Request) {
     <div class="s-login-actions">
       <button
         nz-button

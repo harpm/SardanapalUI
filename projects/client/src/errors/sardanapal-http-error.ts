@@ -1,24 +1,25 @@
 import { Subject, type Observable } from 'rxjs';
 
 /** Names of the CRUD, panel, account and OTP client methods, without the `$` prefix. */
-export type ClientOperation =
-  | 'get'
-  | 'getAll'
-  | 'add'
-  | 'getEditable'
-  | 'edit'
-  | 'delete'
-  | 'getDictionary'
-  | 'getExcel'
-  | 'register'
-  | 'changePassword'
-  | 'changeUserPassword'
-  | 'requestLoginOtp'
-  | 'loginWithOtp'
-  | 'requestRegisterOtp'
-  | 'registerWithOtp'
-  | 'requestResetPassword'
-  | 'resetPassword';
+export enum ClientOperation {
+  Get = 'get',
+  GetAll = 'getAll',
+  Add = 'add',
+  GetEditable = 'getEditable',
+  Edit = 'edit',
+  Delete = 'delete',
+  GetDictionary = 'getDictionary',
+  GetExcel = 'getExcel',
+  Register = 'register',
+  ChangePassword = 'changePassword',
+  ChangeUserPassword = 'changeUserPassword',
+  RequestLoginOtp = 'requestLoginOtp',
+  LoginWithOtp = 'loginWithOtp',
+  RequestRegisterOtp = 'requestRegisterOtp',
+  RegisterWithOtp = 'registerWithOtp',
+  RequestResetPassword = 'requestResetPassword',
+  ResetPassword = 'resetPassword',
+}
 
 /** Where a request came from. The CRUD and panel clients set it on every request. */
 export interface SardanapalErrorContext {

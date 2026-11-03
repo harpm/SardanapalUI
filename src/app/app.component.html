@@ -16,3 +16,25 @@
 
 <h2>Grid</h2>
 <s-grid [client]="people" [columns]="columns" [pageSizeOptions]="[10, 25]" />
+
+<h2>Login</h2>
+<p>
+  <button nz-button (click)="placeLogin(Placement.Left)">Left</button>
+  <button nz-button (click)="placeLogin(Placement.Middle)">Middle</button>
+  <button nz-button (click)="placeLogin(Placement.Right)">Right</button>
+</p>
+@if (loginSession) {
+  <p>
+    Signed in as {{ loginSession.claims?.id ?? '(no id)' }}, must change password:
+    {{ loginSession.mustChangePassword }}
+  </p>
+}
+<div class="login-frame">
+  <s-login [placement]="loginPlacement" [background]="loginBg" [role]="1" (loggedIn)="onLoggedIn($event)" />
+</div>
+<ng-template #loginBg>
+  <div class="login-bg"></div>
+</ng-template>
+
+<h2>Change password</h2>
+<s-change-password (changed)="onLoggedIn($event)" />

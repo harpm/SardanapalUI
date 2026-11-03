@@ -1,6 +1,7 @@
 import { Directionality, type Direction } from '@angular/cdk/bidi';
 import { TestBed } from '@angular/core/testing';
 import {
+  MemoryStorage,
   SardanapalErrorChannel,
   SardanapalHttpClient,
   SardanapalHttpError,
@@ -61,6 +62,37 @@ describe('SardanapalNg.providers', () => {
     NgTestKit.configure({ http: { errors }, auth: { refreshThresholdMinutes: 0 } });
 
     expect(TestBed.inject(SARDANAPAL_HTTP_CLIENT).errors).toBe(errors);
+  });
+
+  it('defaults remember-me storage to session and local when the host omits tokenStorage', () => {
+    sessionStorage.clear();
+    localStorage.clear();
+    NgTestKit.configure();
+    const auth = TestBed.inject(SARDANAPAL_AUTH_SERVICE);
+
+    auth.setRememberMe(false);
+    auth.setToken('session-token');
+    expect(sessionStorage.getItem('sardanapal.auth.token')).toBe('session-token');
+    expect(localStorage.getItem('sardanapal.auth.token')).toBeNull();
+
+    auth.setRememberMe(true);
+    auth.setToken('persist-token');
+    expect(localStorage.getItem('sardanapal.auth.token')).toBe('persist-token');
+    expect(sessionStorage.getItem('sardanapal.auth.token')).toBeNull();
+  });
+
+  it('does not invent persistent storage when the host passed tokenStorage', () => {
+    sessionStorage.clear();
+    localStorage.clear();
+    const storage = new MemoryStorage();
+    NgTestKit.configure({ auth: { tokenStorage: storage } });
+    const auth = TestBed.inject(SARDANAPAL_AUTH_SERVICE);
+
+    auth.setRememberMe(true);
+    auth.setToken('only-memory');
+
+    expect(storage.get('sardanapal.auth.token')).toBe('only-memory');
+    expect(localStorage.getItem('sardanapal.auth.token')).toBeNull();
   });
 
   it('provides the direction service with its options', () => {

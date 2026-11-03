@@ -87,5 +87,7 @@ Selectors are `s-<name>`. Editing controls implement `ControlValueAccessor` (`ng
 | `s-switch` | Boolean |
 | `s-password` | Secret text |
 | `s-grid` | Page and sort through `$getAll` |
+| `s-login` | Password and OTP login page |
+| `s-change-password` | Change password, then sign in again |
 
 Inputs and outputs use `@Input()` / `@Output()`. Internal state uses `signal()`. Each control lives in `projects/ng/src/lib/controls/<name>/`. Details and the wire protocol are in [AGENTS.md](AGENTS.md).

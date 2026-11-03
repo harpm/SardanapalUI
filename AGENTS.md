@@ -295,6 +295,8 @@ Selectors are `s-<kebab-name>`. An editing control implements `ControlValueAcces
 | `s-switch`    | `nz-switch`           | Boolean                            |
 | `s-password`  | `nz-input-password`   | Secret text                        |
 | `s-grid`      | `nz-table`            | Page and sort through `getAll`     |
+| `s-login`            | `nz-tabs` + `s-*`     | Password and OTP login page        |
+| `s-change-password`  | `s-*`                 | Change password, then sign in again |
 
 Inputs and behavior:
 
@@ -307,10 +309,12 @@ Inputs and behavior:
 - `s-switch`: `true` or `false`. `null` from the form shows as off. Inputs: `checkedText`, `uncheckedText`, `size` (`default` or `small`).
 - `s-password`: same text inputs as `s-text-box`, plus `visibilityToggle` (default true). An emptied control gives `''`.
 - `s-grid`: `client` (a CRUD or panel client), `columns` (`SardanapalGridColumn`: `field` with dotted paths, `title`, `sortable`, `width`, `align`, `format`), `searchFields`, `pageSize`, `pageSizeOptions`, `showSizeChanger`, `size`, `rowKey`, `sortId`, `sortAscending`; output `loaded`; method `reload()`. It loads when created and returns to the first page when `client`, `searchFields` or `pageSize` changes (pass a new `searchFields` object to search again). Sorting and paging go to the host. A failure envelope shows its `userMessage`; the Excel export is not part of the grid.
+- `s-login`: not a value accessor. Fields bind to one `SardanapalLoginModel` (`username`, `password`, `email`, `phone`, `code`, `rememberMe`). Flags `usernamePassword`, `emailOtp`, `phoneOtp` (each default `true`) choose which methods appear as tabs; a single method drops the tab strip. `placement` is `SardanapalLoginPlacement` (`Left`, `Middle`, `Right`). `background` is an optional `TemplateRef` behind the card. `role` is the Identity OTP role (required to send a code). `otp` is an optional `SardanapalOtpAccountClient`; otherwise the control builds one from the injected auth service. `labels` overrides the English copy. It calls `$login` or `$requestLoginOtp` / `$loginWithOtp` and applies remember-me (`setRememberMe` before the token is stored). Output `loggedIn` emits the `Session`, including when `mustChangePassword` is true. A 2xx failure envelope shows `userMessage` on the card. Change password is `s-change-password`.
+- `s-change-password`: not a value accessor. Fields bind to one `SardanapalChangePasswordModel` (`username`, `oldPassword`, `newPassword`, `confirmPassword`). Inputs `username` and `oldPassword` pre-fill that model; `rememberMe` is applied to the sign-in after the change; `account` is an optional `SardanapalAccountClient`; `labels` overrides the English copy. It calls `$changePassword`, then `logout()` and `$login` with the new password. Output `changed` emits the fresh `Session`. A 2xx failure envelope shows `userMessage` on the form.
 
 Inputs and outputs use the `@Input()` and `@Output()` decorators, not the signal `input()` and `output()` functions. A control that must react to an input change does it in `ngOnChanges`. Internal state (`value`, `disabled`, loaded rows, loading) stays in `signal()`.
 
-Layout in `projects/ng/src/lib/controls`: each control has a folder named after it, holding `<name>.component.ts`, `<name>.component.html` and `<name>.component.spec.ts` (`text`, `text-box`, `text-area`, `numeric`, `select`, `date`, `checkbox`, `switch`, `password`, `grid`). Code that more than one control uses stays directly in `controls/`: `sources.ts`, `text-control-base.ts` and `test-kit.ts`. Styles stay inline in the component.
+Layout in `projects/ng/src/lib/controls`: each control has a folder named after it, holding `<name>.component.ts`, `<name>.component.html` and `<name>.component.spec.ts` (`text`, `text-box`, `text-area`, `numeric`, `select`, `date`, `checkbox`, `switch`, `password`, `grid`, `login`, `change-password`). `s-login` and `s-change-password` also have `<name>.component.css`. Code that more than one control uses stays directly in `controls/`: `sources.ts`, `text-control-base.ts` and `test-kit.ts`. Field-control styles stay inline in the component.
 
 Specs share `controls/test-kit.ts` (jsdom stubs for `ResizeObserver` and `matchMedia`, `render`, `type`, envelope helpers); `tsconfig.lib.json` leaves it out of the package. `projects/ng/vitest.config.mts` limits Vitest to two workers: with more, a busy machine failed with `Timeout starting forks runner` even though every test passed.
 

@@ -1,13 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { GridSearchModelFactory, Response, type GridResult, type SelectOption } from '@harpm/sardanapal-client';
+import type { Session } from '@harpm/sardanapal-identity-client';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { of } from 'rxjs';
 import {
   SARDANAPAL_DIRECTION_SERVICE,
+  SardanapalChangePasswordComponent,
   SardanapalCheckboxComponent,
   SardanapalDateComponent,
   SardanapalGridComponent,
+  SardanapalLoginComponent,
+  SardanapalLoginPlacement,
   SardanapalNgLocaleService,
   SardanapalNumericComponent,
   SardanapalPasswordComponent,
@@ -68,7 +72,9 @@ class DemoPeople {
     SardanapalCheckboxComponent,
     SardanapalSwitchComponent,
     SardanapalPasswordComponent,
+    SardanapalChangePasswordComponent,
     SardanapalGridComponent,
+    SardanapalLoginComponent,
   ],
   styleUrl: './app.component.css',
   templateUrl: './app.component.html',
@@ -95,6 +101,17 @@ export class AppComponent {
     { field: 'name', title: 'Name', sortable: true },
     { field: 'age', title: 'Age', sortable: true, align: 'right' },
   ];
+  protected readonly Placement = SardanapalLoginPlacement;
+  protected loginPlacement = SardanapalLoginPlacement.Middle;
+  protected loginSession: Session | null = null;
+
+  protected placeLogin(placement: SardanapalLoginPlacement): void {
+    this.loginPlacement = placement;
+  }
+
+  protected onLoggedIn(session: Session): void {
+    this.loginSession = session;
+  }
 
   /** Language and direction are separate services, so the app sets both. */
   protected useEnglish(): void {

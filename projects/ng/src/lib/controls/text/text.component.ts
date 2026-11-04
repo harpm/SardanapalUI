@@ -8,6 +8,7 @@ import {
   type SimpleChanges,
 } from '@angular/core';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
+import { SardanapalTextType } from '../../types/types';
 
 /** Display-only text. `null` and `undefined` show `emptyText`. */
 @Component({
@@ -21,7 +22,7 @@ export class SardanapalTextComponent implements OnChanges {
   @Input() value: unknown = null;
   /** Shown when `value` is `null` or `undefined`. */
   @Input() emptyText = '';
-  @Input() type: 'secondary' | 'warning' | 'danger' | 'success' | undefined = undefined;
+  @Input() type: SardanapalTextType | undefined = undefined;
 
   private readonly currentValue = signal<unknown>(null);
   private readonly currentEmptyText = signal('');

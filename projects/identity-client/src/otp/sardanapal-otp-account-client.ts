@@ -1,4 +1,4 @@
-import { StatusCode, type ClientOperation, type EntityKey, type IResponse } from '@harpm/sardanapal-client';
+import { ClientOperation, StatusCode, type EntityKey, type IResponse } from '@harpm/sardanapal-client';
 import { tap, type Observable } from 'rxjs';
 import {
   SardanapalAccountClient,
@@ -62,7 +62,7 @@ export class SardanapalOtpAccountClient<
    * the code, when the host returns it (Identity's `RequestLoginOtp` does not set it).
    */
   $requestLoginOtp(model: OtpRequestModel): Observable<IResponse<TUserKey>> {
-    return this.$post<TUserKey>(this.endpoints.requestLoginOtp, model, 'requestLoginOtp');
+    return this.$post<TUserKey>(this.endpoints.requestLoginOtp, model, ClientOperation.RequestLoginOtp);
   }
 
   /**
@@ -70,7 +70,7 @@ export class SardanapalOtpAccountClient<
    * token, so the session stream and the `AUTH` header pick it up.
    */
   $loginWithOtp(model: OtpResponseModel<TUserKey>): Observable<IResponse<LoginData>> {
-    return this.$post<LoginData>(this.endpoints.loginWithOtp, model, 'loginWithOtp').pipe(
+    return this.$post<LoginData>(this.endpoints.loginWithOtp, model, ClientOperation.LoginWithOtp).pipe(
       tap((result) => {
         const token = result.data?.token;
         if (result.statusCode === StatusCode.Succeeded && token) {
@@ -85,20 +85,20 @@ export class SardanapalOtpAccountClient<
    * user key, when the host returns it (Identity's `RequestRegisterOtp` does not set it).
    */
   $requestRegisterOtp(model: OtpRequestModel): Observable<IResponse<TUserKey>> {
-    return this.$post<TUserKey>(this.endpoints.requestRegisterOtp, model, 'requestRegisterOtp');
+    return this.$post<TUserKey>(this.endpoints.requestRegisterOtp, model, ClientOperation.RequestRegisterOtp);
   }
 
   $registerWithOtp(model: OtpResponseModel<TUserKey>): Observable<IResponse<boolean>> {
-    return this.$post<boolean>(this.endpoints.registerWithOtp, model, 'registerWithOtp');
+    return this.$post<boolean>(this.endpoints.registerWithOtp, model, ClientOperation.RegisterWithOtp);
   }
 
   /** Asks the host to send a reset code. `data` is the user key to send back with the code. */
   $requestResetPassword(model: ResetPasswordRequestModel): Observable<IResponse<TUserKey>> {
-    return this.$post<TUserKey>(this.endpoints.requestResetPassword, model, 'requestResetPassword');
+    return this.$post<TUserKey>(this.endpoints.requestResetPassword, model, ClientOperation.RequestResetPassword);
   }
 
   $resetPassword(model: ResetPasswordModel<TUserKey>): Observable<IResponse<boolean>> {
-    return this.$post<boolean>(this.endpoints.resetPassword, model, 'resetPassword');
+    return this.$post<boolean>(this.endpoints.resetPassword, model, ClientOperation.ResetPassword);
   }
 
   /** Every OTP call is anonymous: no `AUTH` header and no refresh first. */

@@ -1,24 +1,20 @@
-export const StatusCode = {
-  Succeeded: 0,
-  Failed: 1,
-  Canceled: 3,
-  NotExists: 4,
-  Exception: 5,
-  Duplicate: 6,
-  Forbidden: 7,
-} as const;
+export enum StatusCode {
+  Succeeded = 0,
+  Failed = 1,
+  Canceled = 3,
+  NotExists = 4,
+  Exception = 5,
+  Duplicate = 6,
+  Forbidden = 7,
+}
 
-export type StatusCode = (typeof StatusCode)[keyof typeof StatusCode];
-
-export const OperationType = {
-  Fetch: 0,
-  Add: 1,
-  Edit: 2,
-  Delete: 3,
-  Function: 4,
-} as const;
-
-export type OperationType = (typeof OperationType)[keyof typeof OperationType];
+export enum OperationType {
+  Fetch = 0,
+  Add = 1,
+  Edit = 2,
+  Delete = 3,
+  Function = 4,
+}
 
 /**
  * The Core envelope. This is the shape axios deserializes from the wire, so a

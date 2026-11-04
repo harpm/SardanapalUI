@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SardanapalErrorChannel, SardanapalHttpError } from '../index';
+import { ClientOperation, SardanapalErrorChannel, SardanapalHttpError } from '../index';
 
 describe('error channel', () => {
   it('publishes a reported error and returns the same instance', () => {
@@ -46,7 +46,7 @@ describe('error channel', () => {
 
     expect(error.resource).toBeUndefined();
     error.resource = 'orders';
-    error.operation = 'getAll';
+    error.operation = ClientOperation.GetAll;
 
     expect(error).toMatchObject({ resource: 'orders', operation: 'getAll', name: 'SardanapalHttpError' });
   });

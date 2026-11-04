@@ -49,6 +49,11 @@ export interface SardanapalAuthServiceOptions {
   /** `true` uses the default refresh path. A string overrides that path. Omit to rely on the `AUTH` response header only. */
   refreshUrl?: boolean | string;
   tokenStorage?: KeyValueStorage;
+  /**
+   * When set, `setRememberMe(true)` writes the token here (typically
+   * `localStorage`) and `read()` prefers it over `tokenStorage`.
+   */
+  persistentTokenStorage?: KeyValueStorage;
 }
 
 const defaultEndpoints: EndpointMap = {
@@ -89,7 +94,7 @@ export class SardanapalAuthService {
 
     this.client = options.client;
     this.endpoints = { ...defaultEndpoints, ...options.endpoints };
-    this.store = new SardanapalTokenStore(options.tokenStorage);
+    this.store = new SardanapalTokenStore(options.tokenStorage, options.persistentTokenStorage);
     this.refreshUrl = this.resolveRefreshUrl(options.refreshUrl);
     this.refreshThresholdMinutes = options.refreshThresholdMinutes ?? SardanapalAuthService.REFRESH_THRESHOLD_MINUTES;
 
@@ -138,6 +143,15 @@ export class SardanapalAuthService {
       );
     }
     return this.refreshInFlight$;
+  }
+
+  /**
+   * Chooses where the next stored token is written. Call this before `$login`
+   * or `setToken`. Remembered tokens go to `persistentTokenStorage` when that
+   * adapter was given; otherwise they stay in `tokenStorage`.
+   */
+  setRememberMe(remember: boolean): void {
+    this.store.setRememberMe(remember);
   }
 
   logout(): void {

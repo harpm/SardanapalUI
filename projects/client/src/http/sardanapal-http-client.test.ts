@@ -2,6 +2,7 @@ import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestC
 import { firstValueFrom } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import {
+  ClientOperation,
   OperationType,
   Response,
   SardanapalErrorChannel,
@@ -171,7 +172,7 @@ describe('http client', () => {
     const reported: SardanapalHttpError[] = [];
     client.httpError$.subscribe((error) => reported.push(error));
 
-    await firstValueFrom(client.$request('/orders', { errorContext: { resource: 'orders', operation: 'getAll' } }))
+    await firstValueFrom(client.$request('/orders', { errorContext: { resource: 'orders', operation: ClientOperation.GetAll } }))
       .catch(() => undefined);
     await firstValueFrom(client.$get('/other')).catch(() => undefined);
 
@@ -186,7 +187,7 @@ describe('http client', () => {
     });
     const reported: SardanapalHttpError[] = [];
     client.httpError$.subscribe((error) => reported.push(error));
-    const context = { errorContext: { resource: 'orders', operation: 'get' as const } };
+    const context = { errorContext: { resource: 'orders', operation: ClientOperation.Get } };
 
     await firstValueFrom(client.$request('/orders', context)).catch(() => undefined);
     client.use({

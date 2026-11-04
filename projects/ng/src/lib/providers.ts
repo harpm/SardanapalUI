@@ -4,7 +4,13 @@ import {
   provideEnvironmentInitializer,
   type EnvironmentProviders,
 } from '@angular/core';
-import { SardanapalDirectionService, SardanapalHttpClient } from '@harpm/sardanapal-client';
+import {
+  BrowserStorageAdapter,
+  MemoryStorage,
+  SardanapalDirectionService,
+  SardanapalHttpClient,
+  type KeyValueStorage,
+} from '@harpm/sardanapal-client';
 import { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 import { provideNzNativeDateAdapter } from 'ng-zorro-antd/core/time';
 import { SardanapalNgDirectionBridge } from './direction-bridge';
@@ -53,8 +59,32 @@ export class SardanapalNg {
 
   private static createAuthService(): SardanapalAuthService {
     const options = inject(SARDANAPAL_NG_OPTIONS);
+    const auth = options.auth ?? {};
+    const defaults = auth.tokenStorage
+      ? {}
+      : {
+          tokenStorage: SardanapalNg.browserStorage('session'),
+          persistentTokenStorage: SardanapalNg.browserStorage('local'),
+        };
     // The auth service registers its interceptor on the shared client, so every call carries AUTH.
-    return new SardanapalAuthService({ ...options.auth, client: inject(SARDANAPAL_HTTP_CLIENT) });
+    return new SardanapalAuthService({
+      ...defaults,
+      ...auth,
+      client: inject(SARDANAPAL_HTTP_CLIENT),
+    });
+  }
+
+  /** Session or local browser storage, or memory when that API is missing. */
+  private static browserStorage(kind: 'session' | 'local'): KeyValueStorage {
+    try {
+      const storage = kind === 'local' ? globalThis.localStorage : globalThis.sessionStorage;
+      if (storage) {
+        return new BrowserStorageAdapter(storage);
+      }
+    } catch {
+      // Private mode and non-browser hosts have no Web Storage.
+    }
+    return new MemoryStorage();
   }
 
   private static createDirectionService(): SardanapalDirectionService {

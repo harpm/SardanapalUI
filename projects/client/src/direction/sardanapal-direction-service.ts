@@ -1,7 +1,10 @@
 import { Subject, type Observable } from 'rxjs';
 import { MemoryStorage, type KeyValueStorage } from '../storage/storage';
 
-export type TextDirection = 'ltr' | 'rtl';
+export enum TextDirection {
+  Ltr = 'ltr',
+  Rtl = 'rtl',
+}
 
 /** The part of `document` the service writes to. Pass a fake in tests or outside a browser. */
 export interface DirectionTarget {
@@ -9,7 +12,7 @@ export interface DirectionTarget {
 }
 
 export interface SardanapalDirectionServiceOptions {
-  /** Direction used when none is saved. Defaults to `ltr`. */
+  /** Direction used when none is saved. Defaults to `TextDirection.Ltr`. */
   defaultDirection?: TextDirection;
   /** Persists the chosen direction. Defaults to an in-memory store. */
   storage?: KeyValueStorage;
@@ -25,7 +28,7 @@ export interface SardanapalDirectionServiceOptions {
  */
 export class SardanapalDirectionService {
   private static readonly DIRECTION_STORAGE_KEY = 'sardanapal.direction';
-  private static readonly DEFAULT_DIRECTION: TextDirection = 'ltr';
+  private static readonly DEFAULT_DIRECTION = TextDirection.Ltr;
 
   /** Emits the new direction each time it changes. It does not replay; read `getDirection()` for the current one. */
   readonly directionChanged$: Observable<TextDirection>;
@@ -52,7 +55,7 @@ export class SardanapalDirectionService {
 
   /** Applies and saves the direction. Emits `directionChanged$` only when it differs from the current one. */
   setDirection(direction: TextDirection): void {
-    if (direction !== 'ltr' && direction !== 'rtl') {
+    if (direction !== TextDirection.Ltr && direction !== TextDirection.Rtl) {
       throw new Error(`Invalid direction: ${String(direction)}.`);
     }
     this.storage.set(SardanapalDirectionService.DIRECTION_STORAGE_KEY, direction);
@@ -65,7 +68,7 @@ export class SardanapalDirectionService {
 
   private readSaved(): TextDirection | null {
     const saved = this.storage.get(SardanapalDirectionService.DIRECTION_STORAGE_KEY)?.trim();
-    return saved === 'ltr' || saved === 'rtl' ? saved : null;
+    return saved === TextDirection.Ltr || saved === TextDirection.Rtl ? saved : null;
   }
 
   private apply(direction: TextDirection): void {

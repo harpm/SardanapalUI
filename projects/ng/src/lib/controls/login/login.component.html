@@ -1,0 +1,187 @@
+@if (background) {
+  <div class="s-login-bg">
+    <ng-container *ngTemplateOutlet="background" />
+  </div>
+}
+<div
+  class="s-login-shell"
+  [class.s-login--left]="placement === Placement.Left"
+  [class.s-login--middle]="placement === Placement.Middle"
+  [class.s-login--right]="placement === Placement.Right"
+>
+  <div class="s-login-card">
+    @if (userMessage()) {
+      <p class="s-login-message">{{ userMessage() }}</p>
+    }
+
+    @if (methods().length === 0) {
+      <!-- No login method is enabled. -->
+    } @else if (methods().length === 1) {
+      @switch (methods()[0]) {
+        @case (Method.Password) {
+          <ng-container *ngTemplateOutlet="passwordTpl" />
+        }
+        @case (Method.Email) {
+          <ng-container *ngTemplateOutlet="emailTpl" />
+        }
+        @case (Method.Phone) {
+          <ng-container *ngTemplateOutlet="phoneTpl" />
+        }
+      }
+    } @else {
+      <nz-tabs [nzSelectedIndex]="tabIndex()" (nzSelectedIndexChange)="onTabIndex($event)">
+        @if (usernamePassword) {
+          <nz-tab [nzTitle]="label('passwordTab')">
+            <ng-container *ngTemplateOutlet="passwordTpl" />
+          </nz-tab>
+        }
+        @if (emailOtp) {
+          <nz-tab [nzTitle]="label('emailTab')">
+            <ng-container *ngTemplateOutlet="emailTpl" />
+          </nz-tab>
+        }
+        @if (phoneOtp) {
+          <nz-tab [nzTitle]="label('phoneTab')">
+            <ng-container *ngTemplateOutlet="phoneTpl" />
+          </nz-tab>
+        }
+      </nz-tabs>
+    }
+  </div>
+</div>
+
+<ng-template #passwordTpl>
+  <s-text-box
+    class="s-login-field"
+    [(ngModel)]="model.username"
+    [ngModelOptions]="{ standalone: true }"
+    [placeholder]="label('username')"
+  />
+  <s-password
+    class="s-login-field"
+    [(ngModel)]="model.password"
+    [ngModelOptions]="{ standalone: true }"
+    [placeholder]="label('password')"
+  />
+  <s-checkbox
+    class="s-login-field"
+    [(ngModel)]="model.rememberMe"
+    [ngModelOptions]="{ standalone: true }"
+    [label]="label('rememberMe')"
+  />
+  <div class="s-login-actions">
+    <button
+      nz-button
+      nzType="primary"
+      nzBlock
+      type="button"
+      [nzLoading]="loading()"
+      [disabled]="loading()"
+      (click)="submitPassword()"
+    >
+      {{ label('signIn') }}
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #emailTpl>
+  <s-text-box
+    class="s-login-field"
+    [(ngModel)]="model.email"
+    [ngModelOptions]="{ standalone: true }"
+    [placeholder]="label('email')"
+    [readonly]="otpStep() === OtpStep.Code"
+  />
+  <s-checkbox
+    class="s-login-field"
+    [(ngModel)]="model.rememberMe"
+    [ngModelOptions]="{ standalone: true }"
+    [label]="label('rememberMe')"
+  />
+  @if (otpStep() === OtpStep.Request) {
+    <div class="s-login-actions">
+      <button
+        nz-button
+        nzType="primary"
+        nzBlock
+        type="button"
+        [nzLoading]="loading()"
+        [disabled]="loading()"
+        (click)="requestEmailCode()"
+      >
+        {{ label('sendCode') }}
+      </button>
+    </div>
+  } @else {
+    <s-text-box
+      class="s-login-field"
+      [(ngModel)]="model.code"
+      [ngModelOptions]="{ standalone: true }"
+      [placeholder]="label('code')"
+    />
+    <div class="s-login-actions">
+      <button
+        nz-button
+        nzType="primary"
+        nzBlock
+        type="button"
+        [nzLoading]="loading()"
+        [disabled]="loading()"
+        (click)="submitEmailOtp()"
+      >
+        {{ label('signIn') }}
+      </button>
+    </div>
+  }
+</ng-template>
+
+<ng-template #phoneTpl>
+  <s-text-box
+    class="s-login-field"
+    [(ngModel)]="model.phone"
+    [ngModelOptions]="{ standalone: true }"
+    [placeholder]="label('phone')"
+    [readonly]="otpStep() === OtpStep.Code"
+  />
+  <s-checkbox
+    class="s-login-field"
+    [(ngModel)]="model.rememberMe"
+    [ngModelOptions]="{ standalone: true }"
+    [label]="label('rememberMe')"
+  />
+  @if (otpStep() === OtpStep.Request) {
+    <div class="s-login-actions">
+      <button
+        nz-button
+        nzType="primary"
+        nzBlock
+        type="button"
+        [nzLoading]="loading()"
+        [disabled]="loading()"
+        (click)="requestPhoneCode()"
+      >
+        {{ label('sendCode') }}
+      </button>
+    </div>
+  } @else {
+    <s-text-box
+      class="s-login-field"
+      [(ngModel)]="model.code"
+      [ngModelOptions]="{ standalone: true }"
+      [placeholder]="label('code')"
+    />
+    <div class="s-login-actions">
+      <button
+        nz-button
+        nzType="primary"
+        nzBlock
+        type="button"
+        [nzLoading]="loading()"
+        [disabled]="loading()"
+        (click)="submitPhoneOtp()"
+      >
+        {{ label('signIn') }}
+      </button>
+    </div>
+  }
+</ng-template>

@@ -31,6 +31,7 @@ import {
   type Observable,
 } from 'rxjs';
 import { SardanapalControlBase } from '../../control-base';
+import { SardanapalControlSize } from '../../types/types';
 import type { SardanapalDictionarySource } from '../sources';
 
 /**
@@ -72,7 +73,7 @@ export class SardanapalSelectComponent<TKey extends EntityKey = EntityKey>
   @Input({ transform: booleanAttribute }) multiple = false;
   @Input() placeholder = '';
   @Input({ transform: booleanAttribute }) allowClear = true;
-  @Input() size: 'large' | 'default' | 'small' = 'default';
+  @Input() size = SardanapalControlSize.Default;
 
   protected readonly loading = signal(false);
   private readonly loaded = signal<ReadonlyArray<SelectOption<TKey>>>([]);

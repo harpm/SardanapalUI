@@ -433,6 +433,91 @@ describe('auth', () => {
     storage.remove('sardanapal.auth.token');
     expect(storage.get('sardanapal.auth.token')).toBeNull();
   });
+
+  it('writes a remembered token to persistent storage and clears the session store', async () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const session = new MemoryStorage();
+    const persistent = new MemoryStorage();
+    const { client } = createClient(async () => ({ data: envelope({ token: accessToken }) }), {
+      tokenStorage: session,
+      persistentTokenStorage: persistent,
+    });
+
+    client.setRememberMe(true);
+    await firstValueFrom(client.$login('ada', 'secret'));
+
+    expect(persistent.get('sardanapal.auth.token')).toBe(accessToken);
+    expect(session.get('sardanapal.auth.token')).toBeNull();
+    expect(client.getSession().token).toBe(accessToken);
+  });
+
+  it('writes a session token and clears persistent storage when remember-me is off', async () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const session = new MemoryStorage();
+    const persistent = new MemoryStorage();
+    persistent.set('sardanapal.auth.token', 'old');
+    const { client } = createClient(async () => ({ data: envelope({ token: accessToken }) }), {
+      tokenStorage: session,
+      persistentTokenStorage: persistent,
+    });
+
+    client.setRememberMe(false);
+    await firstValueFrom(client.$login('ada', 'secret'));
+
+    expect(session.get('sardanapal.auth.token')).toBe(accessToken);
+    expect(persistent.get('sardanapal.auth.token')).toBeNull();
+  });
+
+  it('reads a remembered token from persistent storage', () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const persistent = new MemoryStorage();
+    persistent.set('sardanapal.auth.token', accessToken);
+    const { client } = createClient(async () => ({ data: envelope(undefined) }), {
+      tokenStorage: new MemoryStorage(),
+      persistentTokenStorage: persistent,
+    });
+
+    expect(client.getSession().token).toBe(accessToken);
+  });
+
+  it('keeps a remembered token in persistent storage when the AUTH header replaces it', async () => {
+    const original = jwt({ id: '7', exp: farExp(), sd_roles: '1' });
+    const renewed = jwt({ id: '7', exp: farExp(), sd_roles: '2' });
+    const session = new MemoryStorage();
+    const persistent = new MemoryStorage();
+    persistent.set('sardanapal.auth.token', original);
+    const { client, http } = createClient(async () => ({
+      data: { ok: true },
+      headers: { AUTH: renewed },
+    }), {
+      tokenStorage: session,
+      persistentTokenStorage: persistent,
+    });
+
+    await firstValueFrom(http.$get('/orders'));
+
+    expect(client.getSession().token).toBe(renewed);
+    expect(persistent.get('sardanapal.auth.token')).toBe(renewed);
+    expect(session.get('sardanapal.auth.token')).toBeNull();
+  });
+
+  it('clears both stores on logout', async () => {
+    const accessToken = jwt({ id: '7', exp: farExp() });
+    const session = new MemoryStorage();
+    const persistent = new MemoryStorage();
+    const { client } = createClient(async () => ({ data: envelope({ token: accessToken }) }), {
+      tokenStorage: session,
+      persistentTokenStorage: persistent,
+    });
+    client.setRememberMe(true);
+    await firstValueFrom(client.$login('ada', 'secret'));
+
+    client.logout();
+
+    expect(session.get('sardanapal.auth.token')).toBeNull();
+    expect(persistent.get('sardanapal.auth.token')).toBeNull();
+    expect(client.getSession().token).toBeNull();
+  });
 });
 
 function nearExp(): number {
@@ -475,6 +560,7 @@ function createClient(
     refreshUrl?: boolean | string;
     refreshThresholdMinutes?: number;
     tokenStorage?: MemoryStorage | BrowserStorageAdapter;
+    persistentTokenStorage?: MemoryStorage | BrowserStorageAdapter;
   } = {},
 ) {
   const calls: InternalAxiosRequestConfig[] = [];

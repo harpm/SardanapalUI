@@ -1,5 +1,6 @@
 import { booleanAttribute, Directive, Input } from '@angular/core';
 import { SardanapalControlBase } from '../control-base';
+import { SardanapalControlSize, SardanapalControlStatus } from '../types/types';
 
 /**
  * Shared inputs of the text controls (`s-text-box`, `s-text-area`, `s-password`). An emptied
@@ -10,6 +11,6 @@ export abstract class SardanapalTextControlBase extends SardanapalControlBase<st
   @Input() placeholder = '';
   @Input({ transform: booleanAttribute }) readonly = false;
   @Input() maxLength: number | null = null;
-  @Input() size: 'large' | 'default' | 'small' = 'default';
-  @Input() status: '' | 'error' | 'warning' = '';
+  @Input() size = SardanapalControlSize.Default;
+  @Input() status = SardanapalControlStatus.None;
 }

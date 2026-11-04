@@ -5,6 +5,7 @@ import {
   type CrudEndpointMap,
   type SardanapalCrudClientOptions,
 } from '../crud/sardanapal-crud-client';
+import { ClientOperation } from '../errors/sardanapal-http-error';
 import { GridSearchModelFactory, type EntityKey, type GridResult, type GridSearchModel, type SelectOption } from '../grid/grid';
 import type { IResponse } from '../response/response';
 
@@ -25,12 +26,17 @@ export const defaultPanelEndpoints: PanelEndpointMap = {
 
 export type SardanapalPanelClientOptions = SardanapalCrudClientOptions<PanelEndpointMap>;
 
+export enum ExcelResponseType {
+  ArrayBuffer = 'arraybuffer',
+  Blob = 'blob',
+}
+
 export interface GetExcelOptions {
   /**
-   * How axios reads the file. `arraybuffer` (default) works in every runtime.
-   * `blob` is browser-only and returns a `Blob`.
+   * How axios reads the file. `ExcelResponseType.ArrayBuffer` (default) works in every runtime.
+   * `ExcelResponseType.Blob` is browser-only and returns a `Blob`.
    */
-  responseType?: 'arraybuffer' | 'blob';
+  responseType?: ExcelResponseType;
 }
 
 /**
@@ -56,7 +62,7 @@ export class SardanapalPanelClient<
     model?: Partial<GridSearchModel<TKey, TSearch>> | null,
   ): Observable<IResponse<GridResult<SelectOption<TKey>, TKey>>> {
     return this.$send<GridResult<SelectOption<TKey>, TKey>>(
-      'getDictionary',
+      ClientOperation.GetDictionary,
       this.buildPath(this.endpoints.getDictionary),
       { method: 'POST', data: GridSearchModelFactory.create(model) },
     );
@@ -74,9 +80,9 @@ export class SardanapalPanelClient<
   ): Observable<ArrayBuffer | Blob> {
     const data = { ...GridSearchModelFactory.create(model), pageSize: 0 };
     return this.$call<ArrayBuffer | Blob>(
-      'getExcel',
+      ClientOperation.GetExcel,
       this.buildPath(this.endpoints.getExcel),
-      { method: 'POST', data, responseType: options?.responseType ?? 'arraybuffer' },
+      { method: 'POST', data, responseType: options?.responseType ?? ExcelResponseType.ArrayBuffer },
     );
   }
 }

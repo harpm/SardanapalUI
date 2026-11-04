@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { SardanapalControlBase } from '../../control-base';
+import { SardanapalControlSize } from '../../types/types';
 
 /** `true` or `false`. `null` from the form shows as off. */
 @Component({
@@ -14,7 +15,7 @@ import { SardanapalControlBase } from '../../control-base';
 export class SardanapalSwitchComponent extends SardanapalControlBase<boolean> {
   @Input() checkedText: string | null = null;
   @Input() uncheckedText: string | null = null;
-  @Input() size: 'default' | 'small' = 'default';
+  @Input() size: SardanapalControlSize.Default | SardanapalControlSize.Small = SardanapalControlSize.Default;
 
   protected onToggle(checked: boolean): void {
     this.updateValue(checked);

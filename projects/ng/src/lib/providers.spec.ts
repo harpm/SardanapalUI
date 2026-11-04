@@ -1,9 +1,11 @@
 import { Directionality, type Direction } from '@angular/cdk/bidi';
 import { TestBed } from '@angular/core/testing';
 import {
+  MemoryStorage,
   SardanapalErrorChannel,
   SardanapalHttpClient,
   SardanapalHttpError,
+  TextDirection,
 } from '@harpm/sardanapal-client';
 import { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 import { NzMessageService } from 'ng-zorro-antd/message';
@@ -63,8 +65,39 @@ describe('SardanapalNg.providers', () => {
     expect(TestBed.inject(SARDANAPAL_HTTP_CLIENT).errors).toBe(errors);
   });
 
+  it('defaults remember-me storage to session and local when the host omits tokenStorage', () => {
+    sessionStorage.clear();
+    localStorage.clear();
+    NgTestKit.configure();
+    const auth = TestBed.inject(SARDANAPAL_AUTH_SERVICE);
+
+    auth.setRememberMe(false);
+    auth.setToken('session-token');
+    expect(sessionStorage.getItem('sardanapal.auth.token')).toBe('session-token');
+    expect(localStorage.getItem('sardanapal.auth.token')).toBeNull();
+
+    auth.setRememberMe(true);
+    auth.setToken('persist-token');
+    expect(localStorage.getItem('sardanapal.auth.token')).toBe('persist-token');
+    expect(sessionStorage.getItem('sardanapal.auth.token')).toBeNull();
+  });
+
+  it('does not invent persistent storage when the host passed tokenStorage', () => {
+    sessionStorage.clear();
+    localStorage.clear();
+    const storage = new MemoryStorage();
+    NgTestKit.configure({ auth: { tokenStorage: storage } });
+    const auth = TestBed.inject(SARDANAPAL_AUTH_SERVICE);
+
+    auth.setRememberMe(true);
+    auth.setToken('only-memory');
+
+    expect(storage.get('sardanapal.auth.token')).toBe('only-memory');
+    expect(localStorage.getItem('sardanapal.auth.token')).toBeNull();
+  });
+
   it('provides the direction service with its options', () => {
-    NgTestKit.configure({ direction: { target: null, defaultDirection: 'rtl' } });
+    NgTestKit.configure({ direction: { target: null, defaultDirection: TextDirection.Rtl } });
 
     expect(TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).getDirection()).toBe('rtl');
   });
@@ -74,7 +107,7 @@ describe('SardanapalNgDirectionBridge', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('starts with the current direction', () => {
-    NgTestKit.configure({ direction: { target: null, defaultDirection: 'rtl' } });
+    NgTestKit.configure({ direction: { target: null, defaultDirection: TextDirection.Rtl } });
 
     expect(TestBed.inject(Directionality).value).toBe('rtl');
   });
@@ -85,9 +118,9 @@ describe('SardanapalNgDirectionBridge', () => {
     const seen: Direction[] = [];
     directionality.change.subscribe((direction) => seen.push(direction));
 
-    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection('rtl');
-    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection('rtl');
-    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection('ltr');
+    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection(TextDirection.Rtl);
+    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection(TextDirection.Rtl);
+    TestBed.inject(SARDANAPAL_DIRECTION_SERVICE).setDirection(TextDirection.Ltr);
 
     expect(directionality.value).toBe('ltr');
     expect(seen).toEqual(['rtl', 'ltr']);
@@ -152,7 +185,7 @@ describe('SardanapalNgLocaleService', () => {
   });
 
   it('sets the ng-zorro locale and lang, and leaves direction alone', () => {
-    NgTestKit.configure({ direction: { target: null, defaultDirection: 'ltr' } });
+    NgTestKit.configure({ direction: { target: null, defaultDirection: TextDirection.Ltr } });
     const service = TestBed.inject(SardanapalNgLocaleService);
 
     service.setCulture(' fa-IR ');

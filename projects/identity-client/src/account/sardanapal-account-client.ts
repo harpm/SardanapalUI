@@ -1,9 +1,9 @@
-import type {
+import {
   ClientOperation,
-  EntityKey,
-  IResponse,
-  SardanapalHttpClient,
-  SardanapalRequestOptions,
+  type EntityKey,
+  type IResponse,
+  type SardanapalHttpClient,
+  type SardanapalRequestOptions,
 } from '@harpm/sardanapal-client';
 import type { Observable } from 'rxjs';
 import { SardanapalAuthService } from '../auth/sardanapal-auth-service';
@@ -90,28 +90,28 @@ export class SardanapalAccountClient<
   $register(model: TRegister): Observable<IResponse<TUserKey>> {
     return this.client.$post<IResponse<TUserKey>>(this.buildPath(this.endpoints.register), {
       body: model,
-      ...this.context('register'),
+      ...this.context(ClientOperation.Register),
     });
   }
 
   $getEditable(id: TUserKey): Observable<IResponse<TEditable>> {
     return this.client.$get<IResponse<TEditable>>(
       this.buildPath(this.endpoints.getEditable, id),
-      this.context('getEditable'),
+      this.context(ClientOperation.GetEditable),
     );
   }
 
   $edit(id: TUserKey, model: TEditable): Observable<IResponse<boolean>> {
     return this.client.$put<IResponse<boolean>>(this.buildPath(this.endpoints.edit, id), {
       body: model,
-      ...this.context('edit'),
+      ...this.context(ClientOperation.Edit),
     });
   }
 
   $delete(id: TUserKey): Observable<IResponse<boolean>> {
     return this.client.$delete<IResponse<boolean>>(
       this.buildPath(this.endpoints.delete, id),
-      this.context('delete'),
+      this.context(ClientOperation.Delete),
     );
   }
 
@@ -124,7 +124,7 @@ export class SardanapalAccountClient<
   $changePassword(model: ChangePasswordModel): Observable<IResponse<boolean>> {
     return this.client.$post<IResponse<boolean>>(this.buildPath(this.endpoints.changePassword), {
       body: model,
-      ...this.context('changePassword'),
+      ...this.context(ClientOperation.ChangePassword),
       ...this.anonymous(),
     });
   }
@@ -133,7 +133,7 @@ export class SardanapalAccountClient<
   $changeUserPassword(model: ChangeUserPasswordModel<TUserKey>): Observable<IResponse<boolean>> {
     return this.client.$post<IResponse<boolean>>(this.buildPath(this.endpoints.changeUserPassword), {
       body: model,
-      ...this.context('changeUserPassword'),
+      ...this.context(ClientOperation.ChangeUserPassword),
     });
   }
 

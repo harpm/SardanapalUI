@@ -1,6 +1,6 @@
 import type { Observable } from "rxjs";
 import type { AxiosRequestConfig } from "axios";
-import type { ClientOperation } from "../errors/sardanapal-http-error";
+import { ClientOperation } from "../errors/sardanapal-http-error";
 import type { SardanapalHttpClient } from "../http/sardanapal-http-client";
 import {
   GridSearchModelFactory,
@@ -95,7 +95,7 @@ export class SardanapalCrudClient<
   }
 
   $get(id: TKey): Observable<IResponse<TVM>> {
-    return this.$send<TVM>("get", this.buildPath(this.endpoints.get, id), {
+    return this.$send<TVM>(ClientOperation.Get, this.buildPath(this.endpoints.get, id), {
       method: "GET",
     });
   }
@@ -104,14 +104,14 @@ export class SardanapalCrudClient<
     model?: Partial<GridSearchModel<TKey, TSearch>> | null,
   ): Observable<IResponse<GridResult<TItem, TKey>>> {
     return this.$send<GridResult<TItem, TKey>>(
-      "getAll",
+      ClientOperation.GetAll,
       this.buildPath(this.endpoints.getAll),
       { method: "POST", data: GridSearchModelFactory.create(model) },
     );
   }
 
   $add(model: TNew): Observable<IResponse<TKey>> {
-    return this.$send<TKey>("add", this.buildPath(this.endpoints.add), {
+    return this.$send<TKey>(ClientOperation.Add, this.buildPath(this.endpoints.add), {
       method: "POST",
       data: model,
     });
@@ -119,7 +119,7 @@ export class SardanapalCrudClient<
 
   $getEditable(id: TKey): Observable<IResponse<TEditable>> {
     return this.$send<TEditable>(
-      "getEditable",
+      ClientOperation.GetEditable,
       this.buildPath(this.endpoints.getEditable, id),
       { method: "GET" },
     );
@@ -127,7 +127,7 @@ export class SardanapalCrudClient<
 
   $edit(id: TKey, model: TEditable): Observable<IResponse<boolean>> {
     return this.$send<boolean>(
-      "edit",
+      ClientOperation.Edit,
       this.buildPath(this.endpoints.edit, id),
       { method: "PUT", data: model },
     );
@@ -135,7 +135,7 @@ export class SardanapalCrudClient<
 
   $delete(id: TKey): Observable<IResponse<boolean>> {
     return this.$send<boolean>(
-      "delete",
+      ClientOperation.Delete,
       this.buildPath(this.endpoints.delete, id),
       { method: "DELETE" },
     );

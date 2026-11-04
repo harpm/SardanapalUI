@@ -1,18 +1,21 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { TextDirection } from '@harpm/sardanapal-client';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzLayoutModule } from 'ng-zorro-antd/layout';
+import { NzMenuModule } from 'ng-zorro-antd/menu';
 import {
   SARDANAPAL_AUTH_SERVICE,
   SARDANAPAL_DIRECTION_SERVICE,
   SardanapalNgLocaleService,
 } from '@harpm/sardanapal-ng';
 import { DemoJwt } from './demo-jwt';
+import { DemoNav } from './demo-nav';
 
 @Component({
   selector: 'app-root',
-  imports: [NzButtonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [NzButtonModule, NzLayoutModule, NzMenuModule, RouterLink, RouterOutlet],
   styleUrl: './app.component.css',
   templateUrl: './app.component.html',
 })
@@ -22,6 +25,7 @@ export class AppComponent {
   private readonly auth = inject(SARDANAPAL_AUTH_SERVICE);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly groups = DemoNav.groups;
   protected readonly sessionSummary = signal(this.formatSession());
 
   constructor() {

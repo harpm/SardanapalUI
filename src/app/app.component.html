@@ -1,26 +1,45 @@
-<h1>Sardanapal UI demo</h1>
-<p>Culture: {{ locale.culture() }}</p>
-<p>
-  <button nz-button nzType="primary" (click)="useEnglish()">English (ltr)</button>
-  <button nz-button (click)="usePersian()">Persian (rtl)</button>
-</p>
+<nz-layout class="shell">
+  <nz-sider
+    class="sider"
+    nzTheme="light"
+    [nzWidth]="248"
+    nzCollapsible
+    [nzCollapsedWidth]="0"
+    nzBreakpoint="lg"
+  >
+    <a class="brand" routerLink="/">Sardanapal UI</a>
+    <ul nz-menu nzMode="inline" nzTheme="light">
+      @for (group of groups; track group.title) {
+        <li nz-menu-group [nzTitle]="group.title">
+          <ul>
+            @for (item of group.items; track item.path) {
+              <li nz-menu-item nzMatchRouter [nzMatchRouterExact]="item.exact">
+                <a [routerLink]="item.path">{{ item.label }}</a>
+              </li>
+            }
+          </ul>
+        </li>
+      }
+    </ul>
+  </nz-sider>
 
-<nav class="demo-nav">
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Playground</a>
-  <a routerLink="/login" routerLinkActive="active">Login</a>
-  <a routerLink="/change-password" routerLinkActive="active">Change password</a>
-  <a routerLink="/secure" routerLinkActive="active">Secure</a>
-  <a routerLink="/admin" routerLinkActive="active">Admin</a>
-  <a routerLink="/unauthorized" routerLinkActive="active">Unauthorized</a>
-</nav>
-
-<p class="demo-session">
-  Session: {{ sessionSummary() }}
-
-  <button nz-button nzSize="small" (click)="signInViewer()">Viewer</button>
-  <button nz-button nzSize="small" (click)="signInAdmin()">Admin</button>
-  <button nz-button nzSize="small" (click)="signInMustChangePassword()">Must change password</button>
-  <button nz-button nzSize="small" (click)="signOut()">Sign out</button>
-</p>
-
-<router-outlet />
+  <nz-layout>
+    <nz-header>
+      <div class="header-group">
+        <span>Culture: {{ locale.culture() }}</span>
+        <button nz-button nzSize="small" nzType="primary" type="button" (click)="useEnglish()">English</button>
+        <button nz-button nzSize="small" type="button" (click)="usePersian()">Persian</button>
+      </div>
+      <div class="header-group">
+        <span>Session: {{ sessionSummary() }}</span>
+        <button nz-button nzSize="small" type="button" (click)="signInViewer()">Viewer</button>
+        <button nz-button nzSize="small" type="button" (click)="signInAdmin()">Admin</button>
+        <button nz-button nzSize="small" type="button" (click)="signInMustChangePassword()">Must change password</button>
+        <button nz-button nzSize="small" type="button" (click)="signOut()">Sign out</button>
+      </div>
+    </nz-header>
+    <nz-content>
+      <router-outlet />
+    </nz-content>
+  </nz-layout>
+</nz-layout>

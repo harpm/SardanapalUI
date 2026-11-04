@@ -1,37 +1,61 @@
 :host {
   display: block;
-  max-width: 960px;
-  margin: 24px auto;
+  min-height: 100vh;
 }
 
-@media (max-width: 600px) {
-  :host {
-    max-width: 100%;
-    margin: 12px auto;
-  }
+.shell {
+  min-height: 100vh;
 }
 
-.demo-nav {
+.sider {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  background: #fff;
+}
+
+.brand {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 16px 0;
-}
-
-.demo-nav a {
-  color: #1677ff;
+  align-items: center;
+  height: 48px;
+  margin: 8px 12px 4px;
+  padding: 0 12px;
+  font-weight: 600;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.88);
   text-decoration: none;
 }
 
-.demo-nav a.active {
-  font-weight: 600;
-  text-decoration: underline;
+nz-header.ant-layout-header {
+  height: auto;
+  line-height: 1.5;
+  padding: 12px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.88);
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.demo-session {
+.header-group {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 24px;
+}
+
+nz-content.ant-layout-content {
+  padding: 24px;
+  background: #f5f5f5;
+}
+
+@media (max-width: 600px) {
+  nz-header.ant-layout-header,
+  nz-content.ant-layout-content {
+    padding: 12px;
+  }
 }

@@ -4,44 +4,34 @@
   margin: 24px auto;
 }
 
-s-text-box,
-s-text-area,
-s-numeric,
-s-select,
-s-date,
-s-password {
-  margin-bottom: 12px;
-}
-
-s-checkbox,
-s-switch {
-  margin-right: 16px;
-}
-
-.login-frame {
-  height: min(560px, 80vh);
-  min-height: 360px;
-  width: 100%;
-  max-width: 100%;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
 @media (max-width: 600px) {
   :host {
     max-width: 100%;
     margin: 12px auto;
   }
-
-  .login-frame {
-    height: 70vh;
-    border-radius: 0;
-  }
 }
 
-.login-bg {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #1677ff, #69b1ff);
+.demo-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.demo-nav a {
+  color: #1677ff;
+  text-decoration: none;
+}
+
+.demo-nav a.active {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.demo-session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
 }

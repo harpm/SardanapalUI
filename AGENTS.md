@@ -37,14 +37,14 @@ Three packages. Do not fold the HTTP client into the Angular library. Core and I
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@harpm/sardanapal-client` | Core side: `SardanapalHttpClient` (transport and interceptor hooks), `SardanapalHttpError`, the `IResponse<T>` envelope, storage adapters, direction, CRUD, and panel calls. No Angular dependency. |
 | `@harpm/sardanapal-identity-client` | Identity side: `SardanapalAuthService` (login, token cache, automatic refresh, session) and `SardanapalJwtService` (claims), plus `SardanapalAccountClient` and `SardanapalOtpAccountClient` (register, edit, change password, OTP flows). Plugs into the core client as an interceptor. No Angular dependency. |
-| `@harpm/sardanapal-ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`). Depends on both clients. |
+| `@harpm/sardanapal-ng`     | Angular 22 library. Selectors `s-<name>`, implemented with `ng-zorro-antd` 22.x (peer `@angular/*` `^22`, including `@angular/router` for the guards). Depends on both clients. |
 
 
 Layout in `projects/client/src`: each service has a folder named after it, holding the class file (`http/sardanapal-http-client.ts`, `crud/sardanapal-crud-client.ts`, `panel/sardanapal-panel-client.ts`, `direction/sardanapal-direction-service.ts`). Supporting types stay in their own folders (`errors`, `storage`, `response`, `grid`).
 
 Layout in `projects/identity-client/src`: each service has a folder named after it, holding the class file (`auth/sardanapal-auth-service.ts`, `jwt/sardanapal-jwt-service.ts`, `account/sardanapal-account-client.ts`, `otp/sardanapal-otp-account-client.ts`). Supporting types stay in their own folder (`models`).
 
-Layout in `projects/ng/src/lib`: enums live in `types/types.ts` (`SardanapalLoginPlacement`, `SardanapalControlSize`, `SardanapalTextType`, and the rest). Models and label interfaces live in `models/models.ts` (`SardanapalLoginModel`, `SardanapalChangePasswordModel`, `SardanapalGridColumn`). Controls import from those folders; they do not redefine them.
+Layout in `projects/ng/src/lib`: enums live in `types/types.ts` (`SardanapalLoginPlacement`, `SardanapalControlSize`, `SardanapalTextType`, and the rest). Models and label interfaces live in `models/models.ts` (`SardanapalLoginModel`, `SardanapalChangePasswordModel`, `SardanapalUnauthorizedLabels`, `SardanapalGridColumn`). Guards live in `guards/` (`authorize`, `change-password`, `has-role`). Controls import from those folders; they do not redefine them.
 
 `ng-zorro-antd` is Angular-only (forms, CDK, dependency injection). The `s-*` components stay in `@harpm/sardanapal-ng`. A later React or Vue package would wrap `@harpm/sardanapal-client` and would not reuse the Angular templates. Do not compile the controls to Angular Elements: that ships the Angular runtime into every host and breaks `ngModel` and reactive forms.
 
@@ -269,7 +269,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-`SardanapalNg.providers(options)` registers, under injection tokens, one shared `SardanapalHttpClient` (`SARDANAPAL_HTTP_CLIENT`), a `SardanapalAuthService` built on it (`SARDANAPAL_AUTH_SERVICE`) and a `SardanapalDirectionService` (`SARDANAPAL_DIRECTION_SERVICE`). It also registers ng-zorro's native date adapter so `s-date` works. Options: `apiBaseUrl`, `http` (`adapter`, `errors`), `auth` (every auth option except `apiBaseUrl`, `client`, `adapter`), `direction`, and `errorToasts` (default `true`). Build CRUD, panel and account clients with `client: inject(SARDANAPAL_HTTP_CLIENT)` or `auth: inject(SARDANAPAL_AUTH_SERVICE)` so their calls carry the `AUTH` header.
+`SardanapalNg.providers(options)` registers, under injection tokens, one shared `SardanapalHttpClient` (`SARDANAPAL_HTTP_CLIENT`), a `SardanapalAuthService` built on it (`SARDANAPAL_AUTH_SERVICE`) and a `SardanapalDirectionService` (`SARDANAPAL_DIRECTION_SERVICE`). It also registers ng-zorro's native date adapter so `s-date` works. Options: `apiBaseUrl`, `http` (`adapter`, `errors`), `auth` (every auth option except `apiBaseUrl`, `client`, `adapter`), `direction`, `errorToasts` (default `true`), and `guards` (`loginUrl`, `changePasswordUrl`, `unauthorizedUrl`). Build CRUD, panel and account clients with `client: inject(SARDANAPAL_HTTP_CLIENT)` or `auth: inject(SARDANAPAL_AUTH_SERVICE)` so their calls carry the `AUTH` header.
 
 | Class | Role |
 | --- | --- |
@@ -279,6 +279,18 @@ export const appConfig: ApplicationConfig = {
 | `SardanapalControlBase<T>` | Base of every editing control. Implements `ControlValueAccessor` once and registers itself with its own `NgControl`, so a control needs no `NG_VALUE_ACCESSOR` provider. A subclass reads `value()` and `disabled()`, calls `updateValue` on input and `markTouched` on blur. |
 
 Language and direction stay separate. Whoever changes the language calls `SardanapalNgLocaleService.setCulture` and `SardanapalDirectionService.setDirection` (the demo app does both).
+
+### Route guards
+
+Peer `@angular/router`. Decision logic lives on classes; each factory returns a `CanActivateFn` because the router requires one. Redirect URLs come from `options.guards` (defaults `/login`, `/change-password`, `/unauthorized`). Logged in means `getSession().token !== null`. Roles are `claims.roles` (JWT `sd_roles`), compared as strings.
+
+| Guard | Behavior |
+| --- | --- |
+| `SardanapalAuthorizeGuard.canActivate()` | No token → login with `returnUrl`. |
+| `SardanapalChangePasswordGuard.canActivate()` | No token → login; `mustChangePassword` → change-password with `returnUrl`. Do **not** put this on the change-password route (it would loop). |
+| `SardanapalHasRoleGuard.for(role)` | `role` is `string \| number`. No token → login; signed in without the role → unauthorized. Empty role throws at factory time. |
+
+Typical stack on a protected route: Authorize, then ChangePassword, then HasRole when needed. Login and unauthorized stay public. Guards run on navigation only; a mid-request password-change 403 flips `session.mustChangePassword` and the next navigation redirects. Layout in `projects/ng/src/lib/guards`: `guard-base.ts` plus a folder per guard (`authorize`, `change-password`, `has-role`).
 
 ## Components
 
@@ -299,6 +311,7 @@ Selectors are `s-<kebab-name>`. An editing control implements `ControlValueAcces
 | `s-grid`      | `nz-table`            | Page and sort through `getAll`     |
 | `s-login`            | `nz-tabs` + `s-*`     | Password and OTP login page        |
 | `s-change-password`  | `s-*`                 | Change password, then sign in again |
+| `s-unauthorized`     | `nz-result`           | Display-only 403 page              |
 
 Inputs and behavior:
 
@@ -313,12 +326,13 @@ Inputs and behavior:
 - `s-grid`: `client` (a CRUD or panel client), `columns` (`SardanapalGridColumn`: `field` with dotted paths, `title`, `sortable`, `width`, `align` as `SardanapalAlign`, `format`), `searchFields`, `pageSize`, `pageSizeOptions`, `showSizeChanger`, `size` (`SardanapalGridSize`), `rowKey`, `sortId`, `sortAscending`; output `loaded`; method `reload()`. It loads when created and returns to the first page when `client`, `searchFields` or `pageSize` changes (pass a new `searchFields` object to search again). Sorting and paging go to the host. A failure envelope shows its `userMessage`; the Excel export is not part of the grid.
 - `s-login`: not a value accessor. Fields bind to one `SardanapalLoginModel` (`username`, `password`, `email`, `phone`, `code`, `rememberMe`). Flags `usernamePassword`, `emailOtp`, `phoneOtp` (each default `true`) choose which methods appear as tabs; a single method drops the tab strip. `placement` is `SardanapalLoginPlacement` (`Left`, `Middle`, `Right`). `background` is an optional `TemplateRef` behind the card. `role` is the Identity OTP role (required to send a code). `otp` is an optional `SardanapalOtpAccountClient`; otherwise the control builds one from the injected auth service. `labels` overrides the English copy. It calls `$login` or `$requestLoginOtp` / `$loginWithOtp` and applies remember-me (`setRememberMe` before the token is stored). Output `loggedIn` emits the `Session`, including when `mustChangePassword` is true. A 2xx failure envelope shows `userMessage` on the card. Change password is `s-change-password`.
 - `s-change-password`: not a value accessor. Fields bind to one `SardanapalChangePasswordModel` (`username`, `oldPassword`, `newPassword`, `confirmPassword`). Inputs `username` and `oldPassword` pre-fill that model; `rememberMe` is applied to the sign-in after the change; `account` is an optional `SardanapalAccountClient`; `labels` overrides the English copy. It calls `$changePassword`, then `logout()` and `$login` with the new password. Output `changed` emits the fresh `Session`. A 2xx failure envelope shows `userMessage` on the form.
+- `s-unauthorized`: not a value accessor. Display-only `nz-result` with `nzStatus="403"`. `labels` overrides the English `title` and `message`. Hosts mount it on the unauthorized route.
 
 Inputs and outputs use the `@Input()` and `@Output()` decorators, not the signal `input()` and `output()` functions. A control that must react to an input change does it in `ngOnChanges`. Internal state (`value`, `disabled`, loaded rows, loading) stays in `signal()`.
 
-Layout in `projects/ng/src/lib/controls`: each control has a folder named after it, holding `<name>.component.ts`, `<name>.component.html` and `<name>.component.spec.ts` (`text`, `text-box`, `text-area`, `numeric`, `select`, `date`, `checkbox`, `switch`, `password`, `grid`, `login`, `change-password`). `s-login` and `s-change-password` also have `<name>.component.css`. Code that more than one control uses stays directly in `controls/`: `sources.ts`, `text-control-base.ts` and `test-kit.ts`. Shared enums and models stay in `lib/types` and `lib/models`. Field-control styles stay inline in the component.
+Layout in `projects/ng/src/lib/controls`: each control has a folder named after it, holding `<name>.component.ts`, `<name>.component.html` and `<name>.component.spec.ts` (`text`, `text-box`, `text-area`, `numeric`, `select`, `date`, `checkbox`, `switch`, `password`, `grid`, `login`, `change-password`, `unauthorized`). `s-login`, `s-change-password` and `s-unauthorized` also have `<name>.component.css`. Code that more than one control uses stays directly in `controls/`: `sources.ts`, `text-control-base.ts` and `test-kit.ts`. Shared enums and models stay in `lib/types` and `lib/models`. Field-control styles stay inline in the component.
 
-Specs share `controls/test-kit.ts` (jsdom stubs for `ResizeObserver` and `matchMedia`, `render`, `type`, envelope helpers); `tsconfig.lib.json` leaves it out of the package. `projects/ng/vitest.config.mts` limits Vitest to two workers: with more, a busy machine failed with `Timeout starting forks runner` even though every test passed.
+Specs share `controls/test-kit.ts` (jsdom stubs for `ResizeObserver` and `matchMedia`, `render`, `type`, envelope helpers) and `guards/test-kit.ts` (router + session fixtures); `tsconfig.lib.json` leaves them out of the package. `projects/ng/vitest.config.mts` limits Vitest to two workers: with more, a busy machine failed with `Timeout starting forks runner` even though every test passed.
 
 
 Further controls use the same selector and accessor pattern. Do not rename a control to match the ng-zorro tag.

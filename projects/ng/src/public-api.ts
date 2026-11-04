@@ -1,5 +1,5 @@
 export { SardanapalNg } from './lib/providers';
-export type { SardanapalNgOptions } from './lib/options';
+export type { SardanapalNgGuardOptions, SardanapalNgOptions } from './lib/options';
 export {
   SARDANAPAL_AUTH_SERVICE,
   SARDANAPAL_DIRECTION_SERVICE,
@@ -23,6 +23,10 @@ export { SardanapalPasswordComponent } from './lib/controls/password/password.co
 export { SardanapalChangePasswordComponent } from './lib/controls/change-password/change-password.component';
 export { SardanapalGridComponent } from './lib/controls/grid/grid.component';
 export { SardanapalLoginComponent } from './lib/controls/login/login.component';
+export { SardanapalUnauthorizedComponent } from './lib/controls/unauthorized/unauthorized.component';
+export { SardanapalAuthorizeGuard } from './lib/guards/authorize/authorize.guard';
+export { SardanapalChangePasswordGuard } from './lib/guards/change-password/change-password.guard';
+export { SardanapalHasRoleGuard } from './lib/guards/has-role/has-role.guard';
 export {
   SardanapalAlign,
   SardanapalControlSize,
@@ -41,5 +45,6 @@ export type {
   SardanapalChangePasswordLabels,
   SardanapalGridColumn,
   SardanapalLoginLabels,
+  SardanapalUnauthorizedLabels,
 } from './lib/models/models';
 export type { SardanapalDictionarySource, SardanapalGridSource } from './lib/controls/sources';

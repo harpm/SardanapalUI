@@ -71,6 +71,21 @@ Build CRUD, panel, and account clients with `client: inject(SARDANAPAL_HTTP_CLIE
 
 Language and direction are separate. Call both `SardanapalNgLocaleService.setCulture` and `SardanapalDirectionService.setDirection` when the user switches language (the demo app does this).
 
+### Route guards
+
+Peer `@angular/router`. Stack `Authorize`, then `ChangePassword`, then `HasRole` when a role is required. Redirect URLs default to `/login`, `/change-password` and `/unauthorized` (`options.guards`). Do not put `ChangePasswordGuard` on the change-password route.
+
+```ts
+{
+  path: 'admin',
+  canActivate: [
+    SardanapalAuthorizeGuard.canActivate(),
+    SardanapalChangePasswordGuard.canActivate(),
+    SardanapalHasRoleGuard.for('admin'),
+  ],
+}
+```
+
 ### Controls
 
 Selectors are `s-<name>`. Editing controls implement `ControlValueAccessor` (`ngModel`, `formControl`, `formControlName`).
@@ -89,5 +104,6 @@ Selectors are `s-<name>`. Editing controls implement `ControlValueAccessor` (`ng
 | `s-grid` | Page and sort through `$getAll` |
 | `s-login` | Password and OTP login page |
 | `s-change-password` | Change password, then sign in again |
+| `s-unauthorized` | Display-only 403 page (`nz-result`) |
 
 Inputs and outputs use `@Input()` / `@Output()`. Internal state uses `signal()`. Each control lives in `projects/ng/src/lib/controls/<name>/`. Details and the wire protocol are in [AGENTS.md](AGENTS.md).

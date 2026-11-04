@@ -1,117 +1,68 @@
-import { Component, inject } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { GridSearchModelFactory, Response, TextDirection, type GridResult, type SelectOption } from '@harpm/sardanapal-client';
-import type { Session } from '@harpm/sardanapal-identity-client';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { TextDirection } from '@harpm/sardanapal-client';
 import { NzButtonModule } from 'ng-zorro-antd/button';
-import { of } from 'rxjs';
 import {
+  SARDANAPAL_AUTH_SERVICE,
   SARDANAPAL_DIRECTION_SERVICE,
-  SardanapalAlign,
-  SardanapalChangePasswordComponent,
-  SardanapalCheckboxComponent,
-  SardanapalDateComponent,
-  SardanapalGridComponent,
-  SardanapalLoginComponent,
-  SardanapalLoginPlacement,
   SardanapalNgLocaleService,
-  SardanapalNumericComponent,
-  SardanapalPasswordComponent,
-  SardanapalSelectComponent,
-  SardanapalSwitchComponent,
-  SardanapalTextAreaComponent,
-  SardanapalTextBoxComponent,
-  SardanapalTextComponent,
-  type SardanapalGridColumn,
-  type SardanapalGridSource,
 } from '@harpm/sardanapal-ng';
-
-interface Person {
-  id: number;
-  name: string;
-  age: number;
-}
-
-/** Local rows that stand in for a host until the demo gets a mock adapter. */
-class DemoPeople {
-  private static readonly rows: Person[] = [
-    { id: 1, name: 'Ali', age: 31 },
-    { id: 2, name: 'Sara', age: 27 },
-    { id: 3, name: 'Reza', age: 45 },
-  ];
-
-  static readonly source: SardanapalGridSource<Person> = {
-    $getAll: (model) => {
-      const search = GridSearchModelFactory.create(model);
-      const rows = [...DemoPeople.rows];
-      const sortId = search.sortId as keyof Person | undefined;
-      if (sortId) {
-        rows.sort((a, b) => (a[sortId] > b[sortId] ? 1 : a[sortId] < b[sortId] ? -1 : 0));
-        if (!search.sortAscending) {
-          rows.reverse();
-        }
-      }
-      const data: GridResult<Person> = {
-        list: rows,
-        searchModel: { ...search, totalCount: rows.length },
-      };
-      return of(new Response({ statusCode: 0, data }));
-    },
-  };
-}
+import { DemoJwt } from './demo-jwt';
 
 @Component({
   selector: 'app-root',
-  imports: [
-    NzButtonModule,
-    ReactiveFormsModule,
-    SardanapalTextComponent,
-    SardanapalTextBoxComponent,
-    SardanapalTextAreaComponent,
-    SardanapalNumericComponent,
-    SardanapalSelectComponent,
-    SardanapalDateComponent,
-    SardanapalCheckboxComponent,
-    SardanapalSwitchComponent,
-    SardanapalPasswordComponent,
-    SardanapalChangePasswordComponent,
-    SardanapalGridComponent,
-    SardanapalLoginComponent,
-  ],
+  imports: [NzButtonModule, RouterLink, RouterLinkActive, RouterOutlet],
   styleUrl: './app.component.css',
   templateUrl: './app.component.html',
 })
 export class AppComponent {
   protected readonly locale = inject(SardanapalNgLocaleService);
   private readonly direction = inject(SARDANAPAL_DIRECTION_SERVICE);
+  private readonly auth = inject(SARDANAPAL_AUTH_SERVICE);
+  private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly name = new FormControl('');
-  protected readonly notes = new FormControl('');
-  protected readonly age = new FormControl<number | null>(null);
-  protected readonly role = new FormControl<number | null>(null);
-  protected readonly born = new FormControl<Date | null>(null);
-  protected readonly secret = new FormControl('');
-  protected readonly agree = new FormControl(false);
-  protected readonly active = new FormControl(true);
-  protected readonly roles: SelectOption<number>[] = [
-    { key: 1, value: 'Admin' },
-    { key: 2, value: 'Editor' },
-    { key: 3, value: 'Viewer' },
-  ];
-  protected readonly people = DemoPeople.source;
-  protected readonly columns: SardanapalGridColumn<Person>[] = [
-    { field: 'name', title: 'Name', sortable: true },
-    { field: 'age', title: 'Age', sortable: true, align: SardanapalAlign.Right },
-  ];
-  protected readonly Placement = SardanapalLoginPlacement;
-  protected loginPlacement = SardanapalLoginPlacement.Middle;
-  protected loginSession: Session | null = null;
+  protected readonly sessionSummary = signal(this.formatSession());
 
-  protected placeLogin(placement: SardanapalLoginPlacement): void {
-    this.loginPlacement = placement;
+  constructor() {
+    this.auth.session$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.sessionSummary.set(this.formatSession());
+    });
   }
 
-  protected onLoggedIn(session: Session): void {
-    this.loginSession = session;
+  protected signInViewer(): void {
+    this.auth.setToken(
+      DemoJwt.encode({
+        id: 'viewer-1',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        sd_roles: 'viewer',
+      }),
+    );
+  }
+
+  protected signInAdmin(): void {
+    this.auth.setToken(
+      DemoJwt.encode({
+        id: 'admin-1',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        sd_roles: ['admin', 'viewer'],
+      }),
+    );
+  }
+
+  protected signInMustChangePassword(): void {
+    this.auth.setToken(
+      DemoJwt.encode({
+        id: 'must-change-1',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        sd_roles: 'viewer',
+        must_change_pw: 'true',
+      }),
+    );
+  }
+
+  protected signOut(): void {
+    this.auth.logout();
   }
 
   /** Language and direction are separate services, so the app sets both. */
@@ -123,5 +74,14 @@ export class AppComponent {
   protected usePersian(): void {
     this.locale.setCulture('fa-IR');
     this.direction.setDirection(TextDirection.Rtl);
+  }
+
+  private formatSession(): string {
+    const session = this.auth.getSession();
+    if (!session.token) {
+      return 'anonymous';
+    }
+    const roles = session.claims?.roles?.join(', ') || '(none)';
+    return `id=${session.claims?.id ?? '?'}, roles=${roles}, mustChangePassword=${session.mustChangePassword}`;
   }
 }

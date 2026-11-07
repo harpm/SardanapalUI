@@ -15,6 +15,7 @@ import { SardanapalAuthService } from '@harpm/sardanapal-identity-client';
 import { provideNzNativeDateAdapter } from 'ng-zorro-antd/core/time';
 import { SardanapalNgDirectionBridge } from './direction-bridge';
 import { SardanapalNgErrorToasts } from './error-toasts';
+import { SardanapalNgNotFoundInterceptor } from './not-found-interceptor';
 import type { SardanapalNgOptions } from './options';
 import {
   SARDANAPAL_AUTH_SERVICE,
@@ -96,6 +97,9 @@ export class SardanapalNg {
     inject(SardanapalNgDirectionBridge);
     if (inject(SARDANAPAL_NG_OPTIONS).errorToasts !== false) {
       inject(SardanapalNgErrorToasts);
+    }
+    if (inject(SARDANAPAL_NG_OPTIONS).notFound?.redirect !== false) {
+      inject(SardanapalNgNotFoundInterceptor);
     }
   }
 }

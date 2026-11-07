@@ -11,6 +11,10 @@ import { DatePageComponent } from './pages/date.page';
 import { GridPageComponent } from './pages/grid.page';
 import { HomePageComponent } from './pages/home.page';
 import { LoginPageComponent } from './pages/login.page';
+<<<<<<< Updated upstream
+=======
+import { NotFoundPageComponent } from './pages/not-found.page';
+>>>>>>> Stashed changes
 import { NumericPageComponent } from './pages/numeric.page';
 import { PasswordPageComponent } from './pages/password.page';
 import { SecurePageComponent } from './pages/secure.page';
@@ -36,6 +40,10 @@ export const appRoutes: Routes = [
   { path: 'login', component: LoginPageComponent },
   { path: 'change-password', component: ChangePasswordPageComponent },
   { path: 'unauthorized', component: UnauthorizedPageComponent },
+<<<<<<< Updated upstream
+=======
+  { path: 'not-found', component: NotFoundPageComponent },
+>>>>>>> Stashed changes
   {
     path: 'secure',
     component: SecurePageComponent,
@@ -53,5 +61,9 @@ export const appRoutes: Routes = [
       SardanapalHasRoleGuard.for('admin'),
     ],
   },
+<<<<<<< Updated upstream
   { path: '**', redirectTo: '' },
+=======
+  { path: '**', component: NotFoundPageComponent },
+>>>>>>> Stashed changes
 ];

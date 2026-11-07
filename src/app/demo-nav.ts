@@ -33,6 +33,10 @@ export class DemoNav {
       new DemoNavItem('Login', '/login'),
       new DemoNavItem('Change password', '/change-password'),
       new DemoNavItem('Unauthorized', '/unauthorized'),
+<<<<<<< Updated upstream
+=======
+      new DemoNavItem('Not found', '/not-found'),
+>>>>>>> Stashed changes
     ]),
     new DemoNavGroup('Guards', [
       new DemoNavItem('Secure', '/secure'),

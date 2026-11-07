@@ -1,5 +1,17 @@
 export { SardanapalNg } from './lib/providers';
+<<<<<<< Updated upstream
 export type { SardanapalNgGuardOptions, SardanapalNgOptions } from './lib/options';
+=======
+<<<<<<< Updated upstream
+export type { SardanapalNgOptions } from './lib/options';
+=======
+export type {
+  SardanapalNgGuardOptions,
+  SardanapalNgNotFoundOptions,
+  SardanapalNgOptions,
+} from './lib/options';
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 export {
   SARDANAPAL_AUTH_SERVICE,
   SARDANAPAL_DIRECTION_SERVICE,
@@ -8,6 +20,7 @@ export {
 } from './lib/tokens';
 export { SardanapalNgDirectionBridge } from './lib/direction-bridge';
 export { SardanapalNgErrorToasts } from './lib/error-toasts';
+export { SardanapalNgNotFoundInterceptor } from './lib/not-found-interceptor';
 export { SardanapalNgLocaleService } from './lib/locale.service';
 export { SardanapalControlBase } from './lib/control-base';
 export { SardanapalTextComponent } from './lib/controls/text/text.component';
@@ -22,8 +35,17 @@ export { SardanapalSwitchComponent } from './lib/controls/switch/switch.componen
 export { SardanapalPasswordComponent } from './lib/controls/password/password.component';
 export { SardanapalChangePasswordComponent } from './lib/controls/change-password/change-password.component';
 export { SardanapalGridComponent } from './lib/controls/grid/grid.component';
+<<<<<<< Updated upstream
 export { SardanapalLoginComponent } from './lib/controls/login/login.component';
 export { SardanapalUnauthorizedComponent } from './lib/controls/unauthorized/unauthorized.component';
+=======
+<<<<<<< Updated upstream
+export type { SardanapalGridColumn } from './lib/controls/grid/grid.component';
+=======
+export { SardanapalLoginComponent } from './lib/controls/login/login.component';
+export { SardanapalUnauthorizedComponent } from './lib/controls/unauthorized/unauthorized.component';
+export { SardanapalNotFoundComponent } from './lib/controls/not-found/not-found.component';
+>>>>>>> Stashed changes
 export { SardanapalAuthorizeGuard } from './lib/guards/authorize/authorize.guard';
 export { SardanapalChangePasswordGuard } from './lib/guards/change-password/change-password.guard';
 export { SardanapalHasRoleGuard } from './lib/guards/has-role/has-role.guard';
@@ -45,6 +67,13 @@ export type {
   SardanapalChangePasswordLabels,
   SardanapalGridColumn,
   SardanapalLoginLabels,
+<<<<<<< Updated upstream
   SardanapalUnauthorizedLabels,
 } from './lib/models/models';
+=======
+  SardanapalNotFoundLabels,
+  SardanapalUnauthorizedLabels,
+} from './lib/models/models';
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 export type { SardanapalDictionarySource, SardanapalGridSource } from './lib/controls/sources';

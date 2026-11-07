@@ -71,10 +71,30 @@ Build CRUD, panel, and account clients with `client: inject(SARDANAPAL_HTTP_CLIE
 
 Language and direction are separate. Call both `SardanapalNgLocaleService.setCulture` and `SardanapalDirectionService.setDirection` when the user switches language (the demo app does this).
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
 ### Route guards
 
 Peer `@angular/router`. Stack `Authorize`, then `ChangePassword`, then `HasRole` when a role is required. Redirect URLs default to `/login`, `/change-password` and `/unauthorized` (`options.guards`). Do not put `ChangePasswordGuard` on the change-password route.
 
+<<<<<<< Updated upstream
+=======
+### Not found
+
+`SardanapalNgNotFoundInterceptor` starts with the providers. When a request fails with HTTP 404 it navigates to `options.notFound.url` (default `/not-found`, set `notFound: { redirect: false }` to turn it off). Mount `s-not-found` on that route and on the `**` wildcard route so unknown URLs land on the same page (the demo app does both).
+
+```ts
+{
+  path: 'not-found',
+  component: NotFoundPage, // renders <s-not-found />
+},
+{ path: '**', component: NotFoundPage },
+```
+
+>>>>>>> Stashed changes
 ```ts
 {
   path: 'admin',
@@ -86,6 +106,10 @@ Peer `@angular/router`. Stack `Authorize`, then `ChangePassword`, then `HasRole`
 }
 ```
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 ### Controls
 
 Selectors are `s-<name>`. Editing controls implement `ControlValueAccessor` (`ngModel`, `formControl`, `formControlName`).
@@ -102,8 +126,18 @@ Selectors are `s-<name>`. Editing controls implement `ControlValueAccessor` (`ng
 | `s-switch` | Boolean |
 | `s-password` | Secret text |
 | `s-grid` | Page and sort through `$getAll` |
+<<<<<<< Updated upstream
 | `s-login` | Password and OTP login page |
 | `s-change-password` | Change password, then sign in again |
 | `s-unauthorized` | Display-only 403 page (`nz-result`) |
+=======
+<<<<<<< Updated upstream
+=======
+| `s-login` | Password and OTP login page |
+| `s-change-password` | Change password, then sign in again |
+| `s-unauthorized` | Display-only 403 page (`nz-result`) |
+| `s-not-found` | Display-only 404 page (`nz-result`) |
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
 Inputs and outputs use `@Input()` / `@Output()`. Internal state uses `signal()`. Each control lives in `projects/ng/src/lib/controls/<name>/`. Details and the wire protocol are in [AGENTS.md](AGENTS.md).

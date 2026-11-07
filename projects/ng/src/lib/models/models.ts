@@ -48,6 +48,15 @@ export interface SardanapalUnauthorizedLabels {
   message?: string;
 }
 
+<<<<<<< Updated upstream
+=======
+/** English defaults; a host replaces any key to localize the not-found page. */
+export interface SardanapalNotFoundLabels {
+  title?: string;
+  message?: string;
+}
+
+>>>>>>> Stashed changes
 /** One column of `s-grid`. */
 export interface SardanapalGridColumn<TItem = unknown> {
   /** Property of the row. A dotted path such as `customer.name` reads nested values. Also sent as `sortId`. */
